@@ -68,3 +68,14 @@ def test_script_path_setup_resolves(path):
     for parts in re.findall(r"os\.path\.join\((?:os\.path\.dirname\(os\.path\.abspath\(__file__\)\)|_HERE),((?:\s*'[^']+',?)+)\)", path.read_text()):
         rel = [p for p in re.findall(r"'([^']+)'", parts)]
         assert (here.joinpath(*rel)).resolve().is_dir(), (path.name, rel)
+
+
+def test_no_source_file_is_gitignored():
+    """Every .py under src/ and scripts/ must be tracked (an unanchored `data/`
+    ignore rule once dropped src/mvhand/data/ from the repository)."""
+    if not (ROOT / ".git").exists():
+        pytest.skip("not a git checkout")
+    py = [str(p.relative_to(ROOT)) for d in ("src", "scripts") for p in (ROOT / d).rglob("*.py")
+          if "__pycache__" not in p.parts]
+    out = subprocess.run(["git", "-C", str(ROOT), "check-ignore", *py], capture_output=True, text=True)
+    assert out.stdout.strip() == "", f"ignored source files:\n{out.stdout}"

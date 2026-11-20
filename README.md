@@ -102,14 +102,11 @@ All scripts read data and write results under `$ALIGNHAND_DATA` (see [DATA.md](D
 | Table 1, HanCo | `scripts/eval/test_hanco.py run` |
 | Table 1, HO3D-Eval-MV | `scripts/eval/test_ho3d_eval_mv.py` |
 | Table 1, HO3D-MV | `scripts/eval/test_ho3d_mv.py` |
-| Table 2, stage-wise and interventions | `scripts/eval/dev_analysis.py --task stagewise` / `--task interventions` |
-| Fig. 5 and Table S9, number of views | `scripts/eval/dev_analysis.py --task views` |
-| Occlusion | `scripts/eval/make_occlusion_caches.py`, then `dev_analysis.py --task occlusion` |
-| Runtime | `scripts/eval/runtime.py --dataset dexycb` (or `ho3d`) |
+| Table 2, stage-wise (development) | `scripts/eval/dev_analysis.py --dataset dexycb` (or `ho3d`) |
 | Training | `scripts/train/run_all.sh` |
 
-`dev_analysis.py` takes `--dataset dexycb` or `--dataset ho3d`. With the released
-checkpoints, the development stage-wise MPVPE (mm) is reproduced to within 0.0004 mm:
+The stage-wise analysis shows the contribution of each component. With the released
+checkpoints, the development MPVPE (mm) is reproduced to within 0.0004 mm:
 
 | Stage | DexYCB dev | HO3D dev |
 |---|---|---|

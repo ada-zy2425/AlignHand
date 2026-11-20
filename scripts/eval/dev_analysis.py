@@ -1,24 +1,15 @@
-"""Round 3 J3: Development analyses with the locked shared model (U2).
+"""Development stage-wise analysis of the shared model (U2).
 
-Inference only, Development only, locked U2 stack everywhere:
+Inference only, development split only:
 Stage I  results/u2/stage1_s20261023/CHECKPOINT_UPDATE_16800.pt
 R        results/u2/r_s20261023/R_FINAL.pt      (+ U2_GEOMETRY_STATS.pt)
 Ref      results/u2/ref_s20261023/REF_FINAL.pt  (gamma = 1: Ref output)
 
-Tasks (same group lists as the registered per-dataset analyses; common
-valid denominator per paired comparison; failures recorded, never
-dropped silently):
-  stagewise      HG / A / fusion-only (shared R out, X_R) / Full
-  interventions  anchor A under learned / zero-correction (no_du) /
-                 uniform support (uniform_w) / both (raw_uniform),
-                 via the registered e1_bank_variants interventions
-  views          HG / A / Full at k=3..V-1 x 3 registered nested draws
-                 + native (dexycb 3-8, ho3d 3-5)
-  occlusion      Full under learned vs uniform_valid support on the
-                 registered clean_rerun and occhalf prior caches
-                 (same frames, occluded cameras, masks, seeds)
-usage: dev_analysis.py --task stagewise|interventions|views|occlusion
-                 --dataset dexycb|ho3d|hanco_a3 [--limit N] [--workers N]
+Reports MPVPE / MPJPE after each stage on a common valid denominator:
+HG (geometry baseline) / A (aligned anchor) / X_R (+ regional fusion) /
+Full (+ pixel-aligned refinement). Failures are recorded, never dropped.
+
+usage: dev_analysis.py --dataset dexycb|ho3d [--limit N] [--workers N]
 """
 import os
 import argparse, csv, json, sys, time
@@ -257,9 +248,9 @@ def aggregate(per, label, ds, n_expected, extra):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--task', required=True,
-                    choices=('stagewise', 'interventions', 'views',
-                             'occlusion'))
+    # The public release reproduces the stage-wise table; the other analyses
+    # in this module (interventions / views / occlusion) are not part of it.
+    ap.add_argument('--task', default='stagewise', choices=('stagewise',))
     ap.add_argument('--dataset', required=True, choices=list(V_OF))
     ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--workers', type=int, default=24)

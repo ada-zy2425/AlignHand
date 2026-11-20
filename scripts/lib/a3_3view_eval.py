@@ -30,7 +30,10 @@ from s_common import F2F, PREPARED, guard
 import torch
 
 HANDOFF = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/handoff')
-PROTO = json.loads(Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/protocol/hanco_a3_3view.json').read_text())
+# Only the HanCo 3-view analysis needs this protocol; the HanCo test and the
+# development analyses import this module for its hanco_a3 data patches alone.
+_PROTO_FILE = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/protocol/hanco_a3_3view.json')
+PROTO = json.loads(_PROTO_FILE.read_text()) if _PROTO_FILE.exists() else None
 CLEAN = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/results/a3clean')
 SEEDS = (20261023, 20261024, 20261025)
 DRAWS = ('20261021', '20261022', '20261023')
