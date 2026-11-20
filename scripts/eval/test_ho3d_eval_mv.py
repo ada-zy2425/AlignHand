@@ -1,0 +1,334 @@
+"""STAGE6_FINAL_V3_HO3D (FINAL_PLAN_3.json): the one HO3D official-evaluation
+confirmation batch on the frozen v2 3178-UID construction, scored against the
+OFFICIAL HO3D v3 evaluation GT (data_ho3d_gt/v3_gt), identity
+V6_HO3D_COMPLETION. Endpoints exported GT-free; ONE scoring read.
+
+Stacks (per plan rows): U1_HO3D (ho3d FrozenForward: M1 e0a73b0eff5f +
+shipped R s20261023) with gate3 Refs s25/26/27 (gamma .5) and u15a Ref
+(gamma 1); U2_SHARED (E3 stack, DEV_ROLE); U2F_MERGED (u2merged lock); HG.
+usage: test_ho3d_eval_mv.py [--limit N]    # --limit: endpoints only, NO GT read
+"""
+import os
+import argparse, csv, hashlib, json, sys, time
+from multiprocessing import Pool
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
+sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
+import metrics2 as M2  # noqa: E402
+
+PREP = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/prepared/v7_ho3d_conf3178_v1")
+CACHE = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/caches/ho3d/v7_conf_ho3d_hamer_00000_03178_v1")
+U2R = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/results/u2")
+U2F = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/results/u2merged")
+OUT = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/repo/results/paper/final_ho3d")
+GT_DIR = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/data_ho3d_gt/v3_gt")
+EVAL_TXT = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/data_ho3d_eval/official/v3/extracted/evaluation.txt")
+GATE3 = {s: os.environ.get("ALIGNHAND_DATA", "data") + "/results/ref23/gate3{}/gate3/CHECKPOINT_EPOCH_010.pt"
+            .format("" if s == 25 else "_s{}".format(s)) for s in (25, 26, 27)}
+U15A = os.environ.get("ALIGNHAND_DATA", "data") + "/results/s4/u15a_ho3d/REF_SINGLE.pt"
+SEED = 20261023
+# Internal comparison stacks (per-dataset U1 with its Refs, merged U2F) are
+# not released; they are evaluated only when present. The released shared
+# model is the 'u2' stack, whose arms are prefixed u2_ in the outputs.
+HAVE_U1 = Path(U15A).exists() and all(Path(p).exists() for p in GATE3.values())
+HAVE_U2F = (U2F / 'U2F_MODEL_LOCK.json').exists()
+REFERENCE_SUFFIX = 1          # physical camera 0 <-> sequence suffix 1 (AP11/MPM11)
+OPENGL_TO_OPENCV = np.diag([1.0, -1.0, -1.0])
+_W = {}
+
+
+def _patch():
+    import s_common
+    from s_common import F2F, PREPARED, guard
+    PREPARED[("ho3d", "conf")] = F2F / "prepared/v7_ho3d_conf3178_v1"
+    orig = s_common.cache_files
+
+    def cache_files(ds, split):
+        if ds != "ho3d" or split != "conf":
+            return orig(ds, split)
+        d = guard(CACHE)
+        index = json.loads((d / "CACHE_INDEX.json").read_text())
+        files = [d / e["file"] for e in index]
+        prepared = guard(PREPARED[(ds, split)])
+        rows = [json.loads(s) for s in
+                (prepared / "ROWS.jsonl").read_text().splitlines()]
+        assert len(rows) == len(files)
+        return files, rows, prepared
+
+    s_common.cache_files = cache_files
+    return s_common
+
+
+def _build_ref(path):
+    import torch
+    from ref23_train import build_operators
+    from mvhand.regional.refinement import MultiViewRefinement
+    m = MultiViewRefinement(build_operators(), displacement_bound_m=.005,
+                            include_correction_magnitude=True)
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    m.load_state_dict(ck.get("state_dict", ck))
+    return m.eval().requires_grad_(False)
+
+
+def _init():
+    import torch
+    torch.set_num_threads(1)
+    S = _patch()
+    from mvhand.regional.candidates import CandidateEvidenceHead
+
+    def alt_stack(stage_ck_path, r_ck_path, stats):
+        fwd = S.FrozenForward("ho3d", "conf")
+        ck = torch.load(stage_ck_path, map_location="cpu", weights_only=False)
+        fwd.stage.load_state_dict(ck["trainable_state"], strict=True)
+        fwd.stage.eval().requires_grad_(False)
+        rck = torch.load(r_ck_path, map_location="cpu", weights_only=False)
+        fwd.head = CandidateEvidenceHead()
+        fwd.head.load_state_dict(rck.get("state_dict", rck), strict=True)
+        fwd.head.eval().requires_grad_(False)
+        st = torch.load(stats, map_location="cpu", weights_only=False)
+        fwd.mean, fwd.scale = st["mean"], st["scale"]
+        return fwd
+
+    if HAVE_U1:
+        refs_u1 = {"Full_s{}".format(s): (_build_ref(p), 0.5)
+                   for s, p in GATE3.items()}
+        refs_u1["Full_u15a"] = (_build_ref(U15A), 1.0)
+        _W["u1"] = dict(fwd=S.FrozenForward("ho3d", "conf"), refs=refs_u1)
+    _W["u2"] = dict(fwd=alt_stack(
+        U2R / "stage1_s20261023/CHECKPOINT_UPDATE_16800.pt",
+        U2R / "r_s{}/R_FINAL.pt".format(SEED), U2R / "U2_GEOMETRY_STATS.pt"),
+        refs={"Full": (_build_ref(U2R / "ref_s{}/REF_FINAL.pt".format(SEED)),
+                       None)})
+    if HAVE_U2F:
+        lock = json.loads((U2F / "U2F_MODEL_LOCK.json").read_text())
+        _W["u2f"] = dict(fwd=alt_stack(
+            lock["stage1"], U2F / "r/R_FINAL.pt", U2F / "U2F_GEOMETRY_STATS.pt"),
+            refs={"Full": (_build_ref(U2F / "ref/REF_FINAL.pt"), None)})
+
+
+def _endpoints(stack, i):
+    import torch
+    from ref23_train import ref_inputs
+    fwd = stack["fwd"]
+    out = fwd.forward([i])
+    if out is None:
+        return None
+    t = torch.as_tensor
+    x0 = t(out["x0"]).double()
+    extras = {k: t(out[k]) for k in
+              ("support_weights", "reference_to_camera", "raw_to_crop",
+               "intrinsics", "scaffold", "correction_mag", "placed")}
+    extras["x0"] = x0
+    extras["fm"] = t(out["fm"])
+    extras["view_valid"] = t(out["view_valid"]).bool()
+    ent = dict(A=np.asarray(out["anchor"][0], np.float32),
+               X_R=np.asarray(x0[0].numpy(), np.float32))
+    with torch.no_grad():
+        for name, (ref, gamma) in stack["refs"].items():
+            res = ref(**ref_inputs(extras, "cpu"))
+            if gamma is None:
+                xf = res.vertices.double()[0]
+            else:
+                xf = (x0 + gamma * (res.vertices.double() - x0))[0]
+            ent[name] = np.asarray(xf.numpy(), np.float32)
+    return ent
+
+
+def _hg(i):
+    import cv2, torch
+    from mvhand.runtime.unified import uniform_geometry
+    from mvhand.models.interfaces import Form2FrameBatch
+    # prior outputs and crops only; identical for every stack
+    fwd = _W["u1" if "u1" in _W else "u2"]["fwd"]
+    vals = {}
+    with np.load(fwd.files[i], allow_pickle=False) as z:
+        for n in ("joints_2d_normalized", "local_joints_3d",
+                  "local_vertices_3d"):
+            vals[n] = torch.as_tensor(z[n][0][None]).float()
+    affine = fwd.inputs["raw_to_crop_s25"][[i]]
+    inverse = np.stack([[cv2.invertAffineTransform(a) for a in row]
+                        for row in affine])
+    t = torch.as_tensor
+    mask = fwd.inputs["runtime_view_mask"][i]
+    batch = Form2FrameBatch(torch.zeros((1, mask.shape[0], 3, 1, 1)),
+                            t(fwd.inputs["intrinsics"][[i]]),
+                            t(fwd.inputs["camera_to_world"][[i]]),
+                            t(inverse), t(mask[None]), t(affine))
+    v, ok = uniform_geometry(joints_2d_norm=vals["joints_2d_normalized"],
+                             local_joints=vals["local_joints_3d"],
+                             local_vertices=vals["local_vertices_3d"],
+                             batch=batch, geometry_blend=.5)
+    return None if not bool(ok[0]) else np.asarray(v[0].numpy(), np.float32)
+
+
+def _work(ids):
+    rows_out = []
+    for i in ids:
+        ent = {}
+        bad = None
+        for name in [n for n in ("u1", "u2", "u2f") if n in _W]:
+            eps = _endpoints(_W[name], i)
+            if eps is None:
+                bad = name + "_placement_fail"
+                break
+            pref = "" if name == "u1" else name + "_"
+            for arm, X in eps.items():
+                ent[pref + arm] = X
+        if bad:
+            rows_out.append((i, None, bad))
+            continue
+        hg = _hg(i)
+        if hg is not None:
+            ent["HG"] = hg
+        rows_out.append((i, ent, "ok" if hg is not None else "ok_hg_fail"))
+    return rows_out
+
+
+def official_gt(rows, pop):
+    """ONE official-GT read: returns (len(pop),778,3) reference-frame verts
+    in metres plus binding-check numbers."""
+    lines = [l.strip() for l in EVAL_TXT.read_text().splitlines() if l.strip()]
+    index = {line: i for i, line in enumerate(lines)}
+    verts = json.loads((GT_DIR / "evaluation_verts.json").read_text())
+    xyz = json.loads((GT_DIR / "evaluation_xyz.json").read_text())
+    assert len(verts) == len(lines) == len(xyz), (len(verts), len(lines), len(xyz))
+    gt = np.zeros((len(pop), 778, 3))
+    gj = np.zeros((len(pop), 21, 3))
+    for gi, i in enumerate(pop):
+        seq_family, frame = rows[i]["sequence_id"], rows[i]["frame"]
+        ref_seq = seq_family + str(REFERENCE_SUFFIX)   # AP1 -> AP11
+        row_id = index["{}/{}".format(ref_seq, frame)]
+        gt[gi] = np.asarray(verts[row_id], np.float64) @ OPENGL_TO_OPENCV.T
+        gj[gi] = np.asarray(xyz[row_id], np.float64) @ OPENGL_TO_OPENCV.T
+    return gt, gj, dict(total_official_rows=len(lines))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--limit", type=int, default=0)
+    a = ap.parse_args()
+    rows = [json.loads(l) for l in (PREP / "ROWS.jsonl").read_text().splitlines()]
+    predictable = [i for i, r in enumerate(rows) if r["predictable"]]
+    n = len(predictable) if not a.limit else a.limit
+    todo = predictable[:n]
+    OUT.mkdir(parents=True, exist_ok=True)
+    pred_f = OUT / ("PRED_FINAL.npz" if not a.limit
+                    else "PRED_FINAL_SMOKE{}.npz".format(n))
+    if not pred_f.exists():
+        items = [todo[s_:s_ + 4] for s_ in range(0, len(todo), 4)]
+        acc, fails = {}, {}
+        t0 = time.time()
+        with Pool(30, initializer=_init) as pool:
+            for ci, rows_out in enumerate(pool.imap_unordered(_work, items)):
+                for i, ent, status in rows_out:
+                    if ent is None:
+                        fails[i] = status
+                    else:
+                        acc[i] = ent
+                        if status != "ok":
+                            fails[i] = status
+                if (ci + 1) % 100 == 0:
+                    print(json.dumps(dict(chunks=ci + 1, of=len(items),
+                                          sec=round(time.time() - t0, 1))), flush=True)
+        pop = sorted(i for i, e in acc.items() if "HG" in e)
+        arms = sorted(acc[pop[0]])
+        np.savez_compressed(
+            pred_f, pop=np.array(pop),
+            keys=np.array([rows[i]["key"] for i in pop]),
+            arms=np.array(arms), unit=np.array("metres_f32"),
+            fails=np.array(json.dumps({str(k): v for k, v in fails.items()})),
+            **{"V_" + arm: np.stack([acc[i][arm] for i in pop]) for arm in arms})
+        print("FINAL3_ENDPOINTS_EXPORTED", len(pop), flush=True)
+        print("PRED_SHA256",
+              hashlib.sha256(pred_f.read_bytes()).hexdigest(), flush=True)
+    if a.limit:
+        print("SMOKE_DONE_NO_GT_READ", flush=True)
+        return
+    z = np.load(pred_f, allow_pickle=False)
+    pop = [int(p) for p in z["pop"]]
+    keys = [str(k) for k in z["keys"]]
+    arms = [str(x) for x in z["arms"]]
+    seqs = [rows[i]["sequence_id"] for i in pop]
+    q21, shas = M2.load_q21()
+    gt, gj, binding = official_gt(rows, pop)
+    # binding checks (same single GT read)
+    from mvhand.geometry.mesh import POEM_PUBLISHED_MANO_21_REORDER
+    gj_poem = gj[:, list(POEM_PUBLISHED_MANO_21_REORDER)]
+    reg_gap_mm = float(np.linalg.norm(
+        np.einsum("jv,gvd->gjd", q21, gt) - gj_poem, axis=-1).mean() * 1000)
+    binding.update(
+        gt_version="v3", expected_official_rows=20137,
+        q21_mesh_joints_vs_official_xyz_mm=round(reg_gap_mm, 4),
+        gt_wrist_depth_m=round(float(np.abs(gj[:, 0, 2]).mean()), 4))
+    assert binding["total_official_rows"] == 20137, binding
+    boot = M2.SeqBoot(seqs)
+    code_sha = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]
+    long_rows, summ = [], []
+    for arm in arms:
+        V = z["V_" + arm]
+        per = {m: np.zeros(len(pop)) for m in M2.METRIC_KEYS}
+        for gi in range(len(pop)):
+            row = M2.group_metrics(V[gi].astype(np.float64), gt[gi], q21)
+            for m in M2.METRIC_KEYS:
+                per[m][gi] = row[m]
+        for m in M2.METRIC_KEYS:
+            agg = M2.aggregate(per[m], seqs, boot.sidx, boot.useq)
+            ci90 = boot.ci90(per[m])
+            long_rows.append(dict(
+                dataset="ho3d_mv_eval", experiment="FINAL3", row="official_eval_conf",
+                method=arm, source_datasets="ho3d",
+                model_role=("DEV_ROLE" if arm.startswith("u2_") else
+                            "FINAL_MERGED_U2" if arm.startswith("u2f") else "registered_U1"),
+                stage1_seed=str(SEED), r_seed=str(SEED), ref_seed=str(SEED),
+                replication_scope="registered", view_k="native", view_seed="",
+                view_manifest_sha="", split="OFFICIAL_EVAL_5view_conf3178",
+                metric=m, alignment="pa" if "pa" in m else "raw",
+                aggregation="group_mean", value=round(agg["group_mean"], 6),
+                unit=("ratio" if "auc" in m or m.startswith("f") else "mm"),
+                n_expected=len(rows), n_scored=len(pop),
+                coverage=round(len(pop) / len(rows), 4),
+                ci_low=round(ci90[0], 6), ci_high=round(ci90[1], 6),
+                run_id="STAGE6_FINAL_V3_HO3D", ckpt_sha="see_plan",
+                eval_key="metrics2@" + code_sha,
+                input_provenance_key="v7_ho3d_conf3178_v1",
+                code_sha=code_sha, status="SUCCEEDED", reason=""))
+            if m == "abs_v":
+                med = float(np.median(per[m])); p95 = float(np.percentile(per[m], 95))
+                summ.append((arm, round(agg["group_mean"], 4), round(med, 4),
+                             round(p95, 4), round(ci90[0], 4), round(ci90[1], 4)))
+    with open(OUT / "runs.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(long_rows[0]))
+        w.writeheader(); w.writerows(long_rows)
+    lines = ["| arm | abs_v mean mm | median | p95 | ci90 |", "|---|---|---|---|---|"] + \
+            ["| {} | {} | {} | {} | [{}, {}] |".format(*s) for s in summ]
+    (OUT / "table.md").write_text(
+        "# STAGE6_FINAL_V3 - HO3D official-evaluation confirmation "
+        "(frozen 3178-UID construction, official v3 GT, metrics v2)\n\n"
+        + "\n".join(lines) + "\n")
+    cov = {s: dict(constructed=sum(1 for r in rows if r["sequence_id"] == s),
+                   predictable=sum(1 for r in rows if r["sequence_id"] == s and r["predictable"]),
+                   scored=sum(1 for q in seqs if q == s))
+           for s in sorted(set(r["sequence_id"] for r in rows))}
+    (OUT / "STATUS.json").write_text(json.dumps(dict(
+        written_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        batch="STAGE6_FINAL_V3_HO3D", identity="V6_HO3D_COMPLETION",
+        n_expected=len(rows), n_scored=len(pop),
+        coverage=round(len(pop) / len(rows), 4), by_sequence=cov,
+        fails=json.loads(str(z["fails"])), smoke=False,
+        gt_binding=binding, reader_shas=shas), indent=1))
+    (OUT / "ACCESS_LEDGER.json").write_text(json.dumps(dict(
+        official_gt_scoring_reads=1, batch="STAGE6_FINAL_V3_HO3D",
+        at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        gt_files=[str(GT_DIR / "evaluation_verts.json"),
+                  str(GT_DIR / "evaluation_xyz.json")],
+        build_reads="see prepared/v7_ho3d_conf3178_v1/REPORT.json and cache REPORT.json"),
+        indent=1))
+    print("FINAL3_BATCH_DONE", json.dumps({s[0]: s[1] for s in summ}), flush=True)
+
+
+if __name__ == "__main__":
+    main()

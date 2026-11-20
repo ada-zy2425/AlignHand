@@ -1,0 +1,45 @@
+{
+ "model": "U2_SHARED",
+ "seed": 20261023,
+ "gamma": 1,
+ "stage1": {
+  "updates": 16800,
+  "optimizer": "AdamW",
+  "lr": 7.5e-05,
+  "weight_decay": 0.0001,
+  "effective_batch": 4,
+  "grad_clip": 1.0,
+  "warmup_updates": 400,
+  "lr_floor": 0.1,
+  "budget": {
+   "hanco_a3": 8000,
+   "dexycb": 8000,
+   "ho3d": 800
+  },
+  "endpoint": "CHECKPOINT_UPDATE_16800 (final update, pre-registered)"
+ },
+ "r": {
+  "updates": 3194,
+  "optimizer": "AdamW",
+  "lr": 0.0003,
+  "weight_decay": 0.0001,
+  "batch": 64,
+  "loss": "(mpvpe + 0.5*mesh_mpjpe).mean()",
+  "endpoint": "R_FINAL (final update)"
+ },
+ "ref": {
+  "updates": 3840,
+  "microbatch": 8,
+  "effective_batch": 64,
+  "lr": 0.0003,
+  "displacement_bound_m": 0.005,
+  "gamma": 1,
+  "endpoint": "REF_FINAL (final update)"
+ },
+ "geometry_stats": {
+  "schema": "u2-union-fit-stats.v1",
+  "dims": 104,
+  "population": "union of the three U2 fit bundles"
+ },
+ "note": "summary extracted from the as-used drivers and run reports in this directory; the driver constants are authoritative"
+}

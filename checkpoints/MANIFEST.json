@@ -1,0 +1,42 @@
+{
+  "model": "AlignHand shared model U2 (seed 20261023, gamma=1)",
+  "release_tag": "v1.0",
+  "base_url": "https://github.com/ada-zy2425/AlignHand/releases/download/v1.0",
+  "files": [
+    {
+      "name": "stage1_u2_s20261023_update16800.pt",
+      "bytes": 1319344,
+      "sha256": "b8674324a1a789fa9360132631d51119878c63455889b538c616167cd3e2ab8a",
+      "role": "Stage I: observation refinement (327,043 params)",
+      "dest": "results/u2/stage1_s20261023/CHECKPOINT_UPDATE_16800.pt"
+    },
+    {
+      "name": "R_FINAL.pt",
+      "bytes": 539321,
+      "sha256": "c9bf7ffd640f728b1d6589c15fb999424e8b69efe6880ff48c531fce62e1c426",
+      "role": "Regional fusion R (77,021 params)",
+      "dest": "results/u2/r_s20261023/R_FINAL.pt"
+    },
+    {
+      "name": "REF_FINAL.pt",
+      "bytes": 6003207,
+      "sha256": "0104af18ea26cc32d979a57c497016fbc22388b4928b6fc85fc56c2ecc420f75",
+      "role": "Pixel-aligned refinement Ref (579,076 params + fixed buffers)",
+      "dest": "results/u2/ref_s20261023/REF_FINAL.pt"
+    },
+    {
+      "name": "U2_GEOMETRY_STATS.pt",
+      "bytes": 4859,
+      "sha256": "ab6a54fd3db3ab9f008b3d5797e55971cdf931553e77e191a46f97b038a1f810",
+      "role": "Geometry feature normalisation statistics",
+      "dest": "results/u2/U2_GEOMETRY_STATS.pt"
+    },
+    {
+      "name": "region_mask_b_778x6.npy",
+      "bytes": 18800,
+      "sha256": "86006b1abd2399d23ce3c3f017797c1407fb2d5b242d5a424b1835133343bc39",
+      "role": "Fixed 778x6 region basis (palm + 5 fingers)",
+      "dest": "handoff/models/assets/region_mask_b_778x6.npy"
+    }
+  ]
+}

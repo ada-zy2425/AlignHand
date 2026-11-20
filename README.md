@@ -40,17 +40,17 @@ are in Table 1 of the paper.
 ## Repository layout
 
 ```
-src/mvhand/            implementation (models, geometry, regional fusion, refinement, training, evaluation)
-checkpoints/           MANIFEST.json (sha256) + download.py
-reproduce/
-  scripts/train/       pooled Stage I training and the R / Ref chain
-  scripts/eval/        test-set evaluators, development stage-wise / views / occlusion, timing
-  scripts/demo/        single-group inference demo, MANO asset generator
-  scripts/common/      shared helpers and the scorer
-  configs/             as-used configuration locks of the shared model
-  env/                 recorded software environment
-  splits/              group identifiers of every split (IDs only)
-docs/                  project page (GitHub Pages)
+src/mvhand/     implementation: models, geometry, regional fusion, refinement, training, evaluation;
+                src/mvhand/cli/ holds the prior-capture and cache tools
+scripts/
+  demo/         run AlignHand on one multi-view group
+  train/        train the shared model
+  eval/         every result in the paper (table below)
+  lib/          helpers shared by the scripts above
+checkpoints/    MANIFEST.json (sha256) + download.py
+configs/        HaMeR config example, training configuration, recorded environment
+splits/         group identifiers of every split (IDs only)
+docs/           project page
 ```
 
 ## Installation
@@ -62,23 +62,23 @@ pip install -e ".[data]"
 
 The frozen prior needs the official [HaMeR](https://github.com/geopavlakos/hamer)
 code and checkpoint, and [MANO](https://mano.is.tue.mpg.de/) (`MANO_RIGHT.pkl`).
-See [DATA.md](DATA.md) for all external assets and their expected sha256.
+[DATA.md](DATA.md) lists every external asset, where to get it and its expected sha256.
 
 ## Checkpoints
 
-The shared model is 7.9 MB in total (five files, listed with sha256 in
+The shared model is 7.9 MB in total (five files, sha256 in
 [`checkpoints/MANIFEST.json`](checkpoints/MANIFEST.json)):
 
 ```bash
-python checkpoints/download.py --root data   # downloads from the v1.0 release and verifies sha256
+python checkpoints/download.py --root data   # downloads the v1.0 release and verifies sha256
 ```
 
-## Demo: one multi-view group
+## Demo
 
 ```bash
-python reproduce/scripts/demo/gen_mano_assets.py --mano MANO_RIGHT.pkl --out data/handoff/models/assets
-python reproduce/scripts/demo/infer_one_group.py \
-  --spec group.json --hamer-config reproduce/configs/hamer_prior.example.json \
+python scripts/demo/make_mano_assets.py --mano MANO_RIGHT.pkl --out data/handoff/models/assets
+python scripts/demo/infer.py \
+  --spec group.json --hamer-config configs/hamer_prior.example.json \
   --stage1 data/results/u2/stage1_s20261023/CHECKPOINT_UPDATE_16800.pt \
   --r data/results/u2/r_s20261023/R_FINAL.pt --ref data/results/u2/ref_s20261023/REF_FINAL.pt \
   --stats data/results/u2/U2_GEOMETRY_STATS.pt \
@@ -86,25 +86,30 @@ python reproduce/scripts/demo/infer_one_group.py \
   --mano MANO_RIGHT.pkl --out outputs/ --device cuda
 ```
 
-`group.json` holds the synchronized views of one hand:
-`images` (V paths), `intrinsics` (V×3×3), `camera_to_world` (V×4×4) and `boxes`
-(V × `[cx, cy, side]` in pixels; the 2.5× crop expansion is applied by the script).
-The demo writes the final mesh (`.obj`) and 21 joints (`.json`) in the reference
-camera frame. Fill in the sha256 placeholders of the HaMeR config example with
-`sha256sum` of your files.
+`group.json` describes the synchronized views of one hand: `images` (V paths),
+`intrinsics` (V×3×3), `camera_to_world` (V×4×4) and `boxes` (V × `[cx, cy, side]`
+in pixels; the 2.5× crop expansion is applied by the script). The demo writes the
+final mesh (`.obj`) and 21 joints (`.json`) in the reference camera frame. Fill in
+the sha256 placeholders of the HaMeR config example with `sha256sum` of your files.
 
 ## Reproducing the paper
 
-With the datasets prepared as described in [DATA.md](DATA.md) under
-`$ALIGNHAND_DATA`, the development stage-wise table is regenerated with
+All scripts read data and write results under `$ALIGNHAND_DATA` (see [DATA.md](DATA.md)).
 
-```bash
-cd reproduce/scripts/eval
-ALIGNHAND_DATA=/path/to/data python sr3_j3.py --task stagewise --dataset dexycb   # or ho3d
-```
+| Paper | Script |
+|---|---|
+| Table 1, DexYCB-MV | `scripts/eval/test_dexycb.py` |
+| Table 1, HanCo | `scripts/eval/test_hanco.py run` |
+| Table 1, HO3D-Eval-MV | `scripts/eval/test_ho3d_eval_mv.py` |
+| Table 1, HO3D-MV | `scripts/eval/test_ho3d_mv.py` |
+| Table 2, stage-wise and interventions | `scripts/eval/dev_analysis.py --task stagewise` / `--task interventions` |
+| Fig. 5 and Table S9, number of views | `scripts/eval/dev_analysis.py --task views` |
+| Occlusion | `scripts/eval/make_occlusion_caches.py`, then `dev_analysis.py --task occlusion` |
+| Runtime | `scripts/eval/runtime.py --dataset dexycb` (or `ho3d`) |
+| Training | `scripts/train/run_all.sh` |
 
-A fresh-clone rerun with the released checkpoints matches the paper to within
-0.0004 mm in every cell (development MPVPE, mm):
+`dev_analysis.py` takes `--dataset dexycb` or `--dataset ho3d`. With the released
+checkpoints, the development stage-wise MPVPE (mm) is reproduced to within 0.0004 mm:
 
 | Stage | DexYCB dev | HO3D dev |
 |---|---|---|
@@ -113,11 +118,9 @@ A fresh-clone rerun with the released checkpoints matches the paper to within
 | + Regional fusion | 3.545 | 3.449 |
 | + Pixel-aligned refinement | 3.409 | 3.562 |
 
-Test-set evaluators (`f_final_eval_dex.py`, `f_final_eval.py` for HanCo,
-`f_final_eval_ho3d.py`, `f_final_eval_poem.py`), the view-subset, occlusion and
-timing scripts, and the training drivers are in `reproduce/scripts/`;
-[`reproduce/RELEASE_NOTES.md`](reproduce/RELEASE_NOTES.md) records how this bundle
-was assembled and verified.
+The test scripts also evaluate two internal comparison models when their files
+are present; with only the released checkpoints they evaluate HG and the shared
+model, reported under the `u2_` prefix.
 
 ## Citation
 

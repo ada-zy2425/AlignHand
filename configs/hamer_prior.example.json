@@ -1,0 +1,15 @@
+{
+  "prior_name": "HaMeR",
+  "prior_source": "third_party/hamer",
+  "prior_checkpoint": "third_party/hamer/_DATA/hamer_ckpts/checkpoints/hamer.ckpt",
+  "prior_checkpoint_sha256": "e5cc06f294d88a92dee24e603480aab04de532b49f0e08200804ee7d90e16f53",
+  "hamer_assets": {
+    "hamer_checkpoint": {"path": "third_party/hamer/_DATA/hamer_ckpts/checkpoints/hamer.ckpt",
+                         "sha256": "e5cc06f294d88a92dee24e603480aab04de532b49f0e08200804ee7d90e16f53"},
+    "hamer_config":     {"path": "third_party/hamer/_DATA/hamer_ckpts/model_config.yaml", "sha256": "<sha256sum of your file>"},
+    "mano_right":       {"path": "third_party/hamer/_DATA/data/mano/MANO_RIGHT.pkl",
+                         "sha256": "45d60aa3b27ef9107a7afd4e00808f307fd91111e1cfa35afd5c4a62de264767"},
+    "mano_mean_params": {"path": "third_party/hamer/_DATA/data/mano_mean_params.npz", "sha256": "<sha256sum of your file>"},
+    "dataset_contract": {"path": "third_party/hamer/_DATA/hamer_ckpts/dataset_config.yaml", "sha256": "<sha256sum of your file>"}
+  }
+}
