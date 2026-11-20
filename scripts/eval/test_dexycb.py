@@ -224,6 +224,9 @@ def main():
             **{f'V_{arm}': np.stack([acc[i][arm] for i in pop])
                for arm in arms})
         print('FINAL2_ENDPOINTS_EXPORTED', len(pop), flush=True)
+    if a.limit:
+        print('SMOKE_DONE_NO_GT_READ', flush=True)
+        return
     z = np.load(pred_f, allow_pickle=False)
     pop = z['pop']
     keys = [str(k) for k in z['keys']]
