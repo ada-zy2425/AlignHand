@@ -11,30 +11,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{--navy:#1b1b2f;--ink:#222;--text:#3a3a3a;--muted:#6b6b6b;--line:#e3e3e8;--soft:#f5f5f8;--hl:#e6f0fc;--best:#e4693f;--max:960px}
+  :root{--navy:#46566a;--ink:#4a5260;--text:#5a606a;--muted:#8d929a;--line:#e4e6e1;--soft:#f3f4f0;--hl:#edf2f4;--best:#a8664f;--accent:#6c8193;--head:#e8ecee;--bg:#fbfbf8;--max:960px}
   *{box-sizing:border-box}
-  body{margin:0;font-family:"Noto Sans",system-ui,sans-serif;color:var(--text);background:#fff;line-height:1.65;font-size:17px}
+  body{margin:0;font-family:"Noto Sans",system-ui,sans-serif;color:var(--text);background:var(--bg);line-height:1.7;font-size:17px}
   a{color:inherit;text-decoration:none} a:hover{text-decoration:underline}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
   header{padding:72px 0 20px;text-align:center}
-  h1{font-size:54px;line-height:1.1;margin:0;font-weight:700;color:var(--navy);letter-spacing:-.3px}
-  .subtitle{font-size:28px;line-height:1.3;color:#555;margin:10px 0 28px;font-weight:600}
+  h1{font-size:54px;line-height:1.1;margin:0;font-weight:600;color:var(--navy);letter-spacing:-.3px}
+  .subtitle{font-size:27px;line-height:1.3;color:#7a838e;margin:10px 0 28px;font-weight:500}
   .authors{font-size:19px;color:var(--ink);margin:0 0 8px;line-height:1.8}
   .authors span{white-space:nowrap;margin:0 8px}
-  .authors a{border-bottom:1px solid #c9c9d2} .authors a:hover{text-decoration:none;border-color:var(--ink)}
+  .authors a{border-bottom:1px solid #c5ccd3} .authors a:hover{text-decoration:none;border-color:var(--ink)}
   sup{font-size:11px}
   .affils{font-size:15.5px;color:var(--muted);line-height:1.8}
   .affils span{white-space:nowrap;margin:0 8px}
   .corr{font-size:14px;color:var(--muted);margin-top:4px}
   .buttons{margin:30px 0 0;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:9px;padding:11px 24px;border-radius:10px;background:var(--navy);color:#fff;font-weight:600;font-size:17px}
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:11px 24px;border-radius:10px;background:var(--accent);color:#fff;font-weight:500;font-size:17px}
   .btn:hover{text-decoration:none;opacity:.88}
-  .btn.off{background:#efeff2;color:#333;cursor:default}
+  .btn.off{background:var(--head);color:var(--ink);cursor:default}
   .btn.off:hover{opacity:1}
   .btn svg{width:18px;height:18px;fill:currentColor}
   section{padding:46px 0 10px}
-  h2{font-size:32px;margin:0 0 20px;font-weight:700;color:var(--navy);text-align:center}
-  h3{font-size:21px;margin:34px 0 10px;font-weight:700;color:var(--navy);text-align:center}
+  h2{font-size:31px;margin:0 0 20px;font-weight:600;color:var(--navy);text-align:center}
+  h3{font-size:21px;margin:34px 0 10px;font-weight:600;color:var(--navy);text-align:center}
   .lead{text-align:center;color:#444;margin:0 auto 22px;max-width:820px}
   p{margin:0 0 14px}
   .abstract{text-align:justify}
@@ -45,7 +45,7 @@
   .tagline{font-size:20px;color:var(--ink);font-weight:600;text-align:center;margin:44px 0 4px}
   .tagsub{text-align:center;color:var(--muted);margin:0}
   .stages{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:24px}
-  .stage{background:var(--soft);border-radius:12px;padding:18px 18px 14px}
+  .stage{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 18px 14px}
   .stage .num{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.08em}
   .stage h4{margin:4px 0 8px;font-size:17.5px;color:var(--navy)}
   .stage p{margin:0;font-size:15.5px}
@@ -53,7 +53,7 @@
   .note{font-size:15px;color:var(--muted);text-align:center;margin:12px auto 0;max-width:860px}
   .tbl{max-width:840px;margin:0 auto}
   table{width:100%;border-collapse:separate;border-spacing:0;font-size:16.5px}
-  thead th{background:var(--navy);color:#fff;font-weight:600;padding:15px 16px;text-align:center}
+  thead th{background:var(--head);color:var(--navy);font-weight:600;padding:15px 16px;text-align:center}
   thead th:first-child{border-top-left-radius:12px;text-align:left}
   thead th:last-child{border-top-right-radius:12px}
   td{padding:14px 16px;text-align:center;border-bottom:1px solid var(--line)}
@@ -61,11 +61,12 @@
   tr.grp td{background:var(--soft);color:var(--muted);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:10px 16px}
   tr.ours td{background:var(--hl)}
   td.best{color:var(--best);font-weight:600}
+  .tbl table{background:#fff;border-radius:12px}
   .tcap{font-size:15.5px;color:var(--muted);text-align:center;margin:14px auto 30px;max-width:860px}
   .tcap b{color:var(--ink)}
   .two{display:grid;grid-template-columns:1.15fr 1fr;gap:26px;align-items:start}
   .two figcaption{text-align:left}
-  pre{background:var(--soft);border-radius:10px;padding:18px 20px;overflow-x:auto;font-family:"Noto Sans Mono",monospace;font-size:14px;line-height:1.55;color:var(--ink)}
+  pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:18px 20px;overflow-x:auto;font-family:"Noto Sans Mono",monospace;font-size:14px;line-height:1.55;color:var(--ink)}
   footer{padding:36px 0 56px;color:var(--muted);font-size:14px;text-align:center}
   @media (max-width:760px){
     h1{font-size:40px}.subtitle{font-size:20px}.stages,.two{grid-template-columns:1fr}
