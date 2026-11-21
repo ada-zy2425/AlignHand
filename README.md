@@ -58,7 +58,12 @@ docs/           project page
 ```bash
 git clone https://github.com/ada-zy2425/AlignHand.git && cd AlignHand
 pip install -e ".[data]"
+pip install chumpy==0.70 --no-build-isolation   # needed by HaMeR to read MANO
 ```
+
+All results were produced with Python 3.10, PyTorch 2.7.1 and NumPy 1.26
+(full pins in [`configs/requirements-lock.txt`](configs/requirements-lock.txt)).
+On a bare Linux machine, OpenCV may also need `apt install libgl1 libglib2.0-0`.
 
 The frozen prior needs the official [HaMeR](https://github.com/geopavlakos/hamer)
 code and checkpoint, and [MANO](https://mano.is.tue.mpg.de/) (`MANO_RIGHT.pkl`).
@@ -115,9 +120,14 @@ checkpoints, the development MPVPE (mm) is reproduced to within 0.0004 mm:
 | + Regional fusion | 3.545 | 3.449 |
 | + Pixel-aligned refinement | 3.409 | 3.562 |
 
-The test scripts also evaluate two internal comparison models when their files
-are present; with only the released checkpoints they evaluate HG and the shared
-model, reported under the `u2_` prefix.
+In the outputs, `HG` is the geometry baseline, `u2_A` the aligned anchor,
+`u2_X_R` the regionally fused mesh and `u2_Full` the final AlignHand result.
+Table 1 reports `abs_v` / `abs_j21` (MPVPE / MPJPE) for DexYCB-MV and both HO3D
+sets, and `ust_mpvpe_root` / `ust_mpjpe_root` for HanCo.
+
+A fresh install of this repository with only the released checkpoints and the
+public assets reproduces every number in Table 1 to within 0.0005 mm. Training scripts accept
+`--device cpu` for a quick smoke test (`train_stage1.py --smoke 20`).
 
 ## Citation
 
