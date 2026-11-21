@@ -16,11 +16,11 @@ import torch
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 from pipeline import Bundle, guard  # noqa: E402
 from mvhand.geometry.mesh_sampling import coarse_mesh_operators  # noqa: E402
-from mvhand.regional.refinement import MultiViewRefinement  # noqa: E402
-from mvhand.regional.training import errors, state_hash  # noqa: E402
-from mvhand.runtime.mano_compat import legacy_mano_imports  # noqa: E402
-from mvhand.training.real import load_mano_base_regressor  # noqa: E402
-from mvhand.training.refinement import refinement_loss  # noqa: E402
+from mvhand.refinement.model import MultiViewRefinement  # noqa: E402
+from mvhand.fusion.training import errors, state_hash  # noqa: E402
+from mvhand.prior.mano_compat import legacy_mano_imports  # noqa: E402
+from mvhand.training.validation import load_mano_base_regressor  # noqa: E402
+from mvhand.refinement.supervision import refinement_loss  # noqa: E402
 
 BUNDLES = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/results/s1/bundles")
 DATASETS = ("dexycb", "ho3d", "hanco")

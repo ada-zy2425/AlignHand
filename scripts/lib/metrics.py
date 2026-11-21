@@ -20,7 +20,7 @@ _REG_PATH = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/handoff/models/ass
 
 def load_q21():
     import torch
-    from mvhand.geometry.mesh import build_poem_published_21_regressor
+    from mvhand.geometry.mesh_joints import build_poem_published_21_regressor
     base = torch.as_tensor(np.load(_REG_PATH), dtype=torch.float64)
     q21 = build_poem_published_21_regressor(base).numpy().astype(np.float64)
     sha = dict(

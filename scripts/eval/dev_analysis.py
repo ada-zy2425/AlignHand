@@ -37,7 +37,7 @@ _W = {}
 def u2_forward(ds):
     import torch
     import pipeline as S
-    from mvhand.regional.candidates import CandidateEvidenceHead
+    from mvhand.fusion.candidates import CandidateEvidenceHead
     if ds == 'hanco_a3':
         import hanco  # noqa: F401 (installs hanco_a3 patches)
     fwd = S.FrozenForward(ds, 'development')
@@ -59,7 +59,7 @@ def u2_forward(ds):
 def u2_ref():
     import torch
     from refinement import build_operators
-    from mvhand.regional.refinement import MultiViewRefinement
+    from mvhand.refinement.model import MultiViewRefinement
     m = MultiViewRefinement(build_operators(), displacement_bound_m=.005,
                             include_correction_magnitude=True)
     ck = torch.load(U2 / 'ref_s20261023/REF_FINAL.pt', map_location='cpu',
@@ -87,8 +87,8 @@ def full_from_out(out, refm):
 
 def hg_of(fwd, i, mask):
     import cv2, torch
-    from mvhand.runtime.unified import uniform_geometry
-    from mvhand.models.interfaces import Form2FrameBatch
+    from mvhand.pipeline.runtime import uniform_geometry
+    from mvhand.interfaces import Form2FrameBatch
     vals = {}
     with np.load(fwd.files[i], allow_pickle=False) as z:
         for n in ('joints_2d_normalized', 'local_joints_3d',

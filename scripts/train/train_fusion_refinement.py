@@ -171,8 +171,8 @@ class DsSampler:
 def step_train_r(seed, device):
     from pipeline import Bundle
     from fusion_refinement_training import assets, r_forward
-    from mvhand.regional.candidates import CandidateEvidenceHead
-    from mvhand.regional.training import errors
+    from mvhand.fusion.candidates import CandidateEvidenceHead
+    from mvhand.fusion.training import errors
     out = U2ROOT / f'r_s{seed}{subset_tag(ACTIVE)}'
     if (out / 'R_FINAL.pt').exists():
         print('R_ALREADY', flush=True)
@@ -222,7 +222,7 @@ def step_train_r(seed, device):
 
 
 def _load_shared_r(seed, device):
-    from mvhand.regional.candidates import CandidateEvidenceHead
+    from mvhand.fusion.candidates import CandidateEvidenceHead
     ck = torch.load(U2ROOT / f'r_s{seed}{subset_tag(ACTIVE)}' / 'R_FINAL.pt',
                     map_location='cpu', weights_only=False)
     head = CandidateEvidenceHead()
@@ -236,10 +236,10 @@ def step_train_ref(seed, device):
     from fusion_refinement_training import assets, clean_extras
     from refinement import (build_operators, ref_inputs, load_supervision,
                              supervision_batch)
-    from mvhand.regional.refinement import MultiViewRefinement
-    from mvhand.runtime.mano_compat import legacy_mano_imports
-    from mvhand.training.real import load_mano_base_regressor
-    from mvhand.training.refinement import refinement_loss
+    from mvhand.refinement.model import MultiViewRefinement
+    from mvhand.prior.mano_compat import legacy_mano_imports
+    from mvhand.training.validation import load_mano_base_regressor
+    from mvhand.refinement.supervision import refinement_loss
     out = U2ROOT / f'ref_s{seed}{subset_tag(ACTIVE)}'
     if (out / 'REF_FINAL.pt').exists():
         print('REF_ALREADY', flush=True)
@@ -320,7 +320,7 @@ def step_eval(seed, device):
     from pipeline import Bundle
     from fusion_refinement_training import assets, clean_extras
     from refinement import ref_inputs
-    from mvhand.regional.refinement import MultiViewRefinement
+    from mvhand.refinement.model import MultiViewRefinement
     from refinement import build_operators
     mean, scale = union_stats()
     basis, _ = assets(device)

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from mvhand.io import atomic_json, atomic_torch, sha256
-from mvhand.runtime.unified import UnifiedCache
+from mvhand.pipeline.runtime import UnifiedCache
 
 
 def main():

@@ -65,7 +65,7 @@ def _patch():
 def _build_ref(path):
     import torch
     from refinement import build_operators
-    from mvhand.regional.refinement import MultiViewRefinement
+    from mvhand.refinement.model import MultiViewRefinement
     m = MultiViewRefinement(build_operators(), displacement_bound_m=.005,
                             include_correction_magnitude=True)
     ck = torch.load(path, map_location="cpu", weights_only=False)
@@ -77,7 +77,7 @@ def _init():
     import torch
     torch.set_num_threads(1)
     S = _patch()
-    from mvhand.regional.candidates import CandidateEvidenceHead
+    from mvhand.fusion.candidates import CandidateEvidenceHead
 
     def alt_stack(stage_ck_path, r_ck_path, stats):
         fwd = S.FrozenForward("ho3d", "conf")
@@ -139,8 +139,8 @@ def _endpoints(stack, i):
 
 def _hg(i):
     import cv2, torch
-    from mvhand.runtime.unified import uniform_geometry
-    from mvhand.models.interfaces import Form2FrameBatch
+    from mvhand.pipeline.runtime import uniform_geometry
+    from mvhand.interfaces import Form2FrameBatch
     # prior outputs and crops only; identical for every stack
     fwd = _W["u1" if "u1" in _W else "u2"]["fwd"]
     vals = {}
@@ -255,7 +255,7 @@ def main():
     q21, shas = M2.load_q21()
     gt, gj, binding = official_gt(rows, pop)
     # binding checks (same single GT read)
-    from mvhand.geometry.mesh import POEM_PUBLISHED_MANO_21_REORDER
+    from mvhand.geometry.mesh_joints import POEM_PUBLISHED_MANO_21_REORDER
     gj_poem = gj[:, list(POEM_PUBLISHED_MANO_21_REORDER)]
     reg_gap_mm = float(np.linalg.norm(
         np.einsum("jv,gvd->gjd", q21, gt) - gj_poem, axis=-1).mean() * 1000)

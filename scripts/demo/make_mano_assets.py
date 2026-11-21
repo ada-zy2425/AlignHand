@@ -23,8 +23,8 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     a = ap.parse_args()
     from mvhand.geometry.mesh_sampling import coarse_mesh_operators
-    from mvhand.runtime.mano_compat import legacy_mano_imports
-    from mvhand.training.real import load_mano_base_regressor
+    from mvhand.prior.mano_compat import legacy_mano_imports
+    from mvhand.training.validation import load_mano_base_regressor
     a.out.mkdir(parents=True, exist_ok=True)
     reg = load_mano_base_regressor(a.mano).numpy().astype(np.float32)
     np.save(a.out / 'mano_base_joint_regressor_16x778.npy', reg)

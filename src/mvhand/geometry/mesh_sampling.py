@@ -1,4 +1,4 @@
-"""Deterministic template-only coarse mesh operators for the Ref trial."""
+"""Deterministic coarse-mesh operators (195 sampled vertices) used by pixel-aligned refinement."""
 import numpy as np
 
 

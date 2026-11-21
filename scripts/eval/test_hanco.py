@@ -152,9 +152,9 @@ def _init():
     import torch
     torch.set_num_threads(1)
     S = _patch()
-    from mvhand.regional.candidates import CandidateEvidenceHead
+    from mvhand.fusion.candidates import CandidateEvidenceHead
     from refinement import build_operators
-    from mvhand.regional.refinement import MultiViewRefinement
+    from mvhand.refinement.model import MultiViewRefinement
     lock = (json.loads((REFIT / 'MODEL_LOCK.json').read_text())
             if HAVE_REFIT else None)
 
@@ -216,8 +216,8 @@ def _endpoints(stack, i):
 
 def _hg(i):
     import cv2, torch
-    from mvhand.runtime.unified import uniform_geometry
-    from mvhand.models.interfaces import Form2FrameBatch
+    from mvhand.pipeline.runtime import uniform_geometry
+    from mvhand.interfaces import Form2FrameBatch
     # prior outputs and crops only; identical for every stack
     fwd = _W['refit' if HAVE_REFIT else 'u2']['fwd']
     vals = {}

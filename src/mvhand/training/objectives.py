@@ -1,3 +1,4 @@
+"""Stage I training loss and supervision masks."""
 from __future__ import annotations
 
 from typing import Any
@@ -7,7 +8,7 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from mvhand.geometry.camera import dehomogenize
-from mvhand.models.form2frame import raw_to_normalized_crop
+from mvhand.observation.model import raw_to_normalized_crop
 
 
 ENTROPY_FLOOR_NATS = 1.2

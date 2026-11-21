@@ -1,3 +1,4 @@
+"""Index WebDataset shards for random access during training."""
 from __future__ import annotations
 import json, sqlite3, tarfile
 from pathlib import Path
@@ -54,11 +55,11 @@ class IndexedWDS:
         return self._get_authorized("test", qualified_key)
 
     def get_group(self, split, qualified_key, hamer_source):
-        from mvhand.data.poem_wds_runtime import decode_canonical_sample
+        from mvhand.data.poem_reader import decode_canonical_sample
         return decode_canonical_sample(self.get(split,qualified_key), hamer_source, qualified_key=qualified_key)
 
     def get_terminal_group(self, qualified_key, hamer_source, authorization):
-        from mvhand.data.poem_wds_runtime import decode_canonical_sample
+        from mvhand.data.poem_reader import decode_canonical_sample
         return decode_canonical_sample(
             self.get_terminal(qualified_key, authorization),
             hamer_source,

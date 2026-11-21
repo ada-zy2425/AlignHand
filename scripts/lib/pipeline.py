@@ -20,12 +20,15 @@ import torch
 
 import sys
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-from mvhand.geometry.mesh_recovery import recover_positioned_mesh  # noqa: E402
-from mvhand.models.interfaces import Form2FrameBatch, HandPriorOutput  # noqa: E402
-from mvhand.regional.candidates import CandidateEvidenceHead  # noqa: E402
-from mvhand.regional.single_prior import (  # noqa: E402
-    SinglePriorBank, assemble_single_prior_inputs, forward_single_prior)
-from mvhand.training.cached_stage1 import build_cached_stage1  # noqa: E402
+from mvhand.geometry.metric_alignment import recover_positioned_mesh  # noqa: E402
+from mvhand.interfaces import Form2FrameBatch, HandPriorOutput  # noqa: E402
+from mvhand.fusion.candidates import CandidateEvidenceHead  # noqa: E402
+from mvhand.fusion.candidate_bank import (
+    SinglePriorBank,
+    assemble_single_prior_inputs,
+    forward_single_prior,
+)
+from mvhand.training.observation_training import build_cached_stage1  # noqa: E402
 
 F2F = Path(os.environ.get("ALIGNHAND_DATA", "data"))
 HANDOFF = F2F / "handoff"

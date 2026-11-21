@@ -1,3 +1,4 @@
+"""Shared conventions: coordinate frames, units, joint orders, metric names and dataset/camera contracts."""
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple

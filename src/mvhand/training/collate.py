@@ -1,9 +1,10 @@
+"""Collate multi-view groups into training batches with joint supervision."""
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 import numpy as np, torch
 from mvhand.data.reference_targets import reference_target
-from mvhand.models.interfaces import Form2FrameBatch
+from mvhand.interfaces import Form2FrameBatch
 
 @dataclass
 class TrainingBatch:

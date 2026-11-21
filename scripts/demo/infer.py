@@ -54,17 +54,17 @@ def main():
     import torch
     torch.set_num_threads(max(1, os.cpu_count() // 2))
     import pipeline as S
-    from mvhand.cli.v2_capture_hanco_prior import load_prior
-    from mvhand.geometry.mesh import build_poem_published_21_regressor
+    from mvhand.cli.capture_hanco_prior import load_prior
+    from mvhand.geometry.mesh_joints import build_poem_published_21_regressor
     from mvhand.geometry.mesh_sampling import coarse_mesh_operators
-    from mvhand.models.frozen_prior import FrozenOfficialPrior
-    from mvhand.models.hamer_adapter import normalize_rgb_crops
-    from mvhand.models.interfaces import Form2FrameBatch
-    from mvhand.regional.candidates import CandidateEvidenceHead
-    from mvhand.regional.refinement import MultiViewRefinement
-    from mvhand.runtime.mano_compat import legacy_mano_imports
-    from mvhand.training.cached_stage1 import build_cached_stage1
-    from mvhand.training.real import load_mano_base_regressor
+    from mvhand.prior.feature_cache import FrozenOfficialPrior
+    from mvhand.prior.hamer_adapter import normalize_rgb_crops
+    from mvhand.interfaces import Form2FrameBatch
+    from mvhand.fusion.candidates import CandidateEvidenceHead
+    from mvhand.refinement.model import MultiViewRefinement
+    from mvhand.prior.mano_compat import legacy_mano_imports
+    from mvhand.training.observation_training import build_cached_stage1
+    from mvhand.training.validation import load_mano_base_regressor
     from dataclasses import fields as dc_fields
 
     spec = json.loads(a.spec.read_text())

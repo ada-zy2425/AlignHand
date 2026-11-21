@@ -61,8 +61,8 @@ _W = {}
 
 
 def _init():
-    from mvhand.regional.candidates import CandidateEvidenceHead
-    from mvhand.regional.refinement import MultiViewRefinement
+    from mvhand.fusion.candidates import CandidateEvidenceHead
+    from mvhand.refinement.model import MultiViewRefinement
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
     from refinement import build_operators
     torch.set_num_threads(1)
@@ -91,7 +91,7 @@ def _init():
 
 
 def out_to_batch(out):
-    from mvhand.regional.single_prior import SinglePriorBank
+    from mvhand.fusion.candidate_bank import SinglePriorBank
     a = lambda k: torch.as_tensor(np.ascontiguousarray(out[k]))
     count = out['candidates'].shape[1]
     views = out['view_valid'].shape[1]
@@ -124,9 +124,9 @@ def out_to_batch(out):
 
 def _work(item):
     """item = (ids, draw). Returns rows of per-group metrics or failures."""
-    from mvhand.regional.single_prior import forward_single_prior
+    from mvhand.fusion.candidate_bank import forward_single_prior
     from refinement import ref_inputs
-    from mvhand.regional.training import errors
+    from mvhand.fusion.training import errors
     ids, draw = item
     fwd = _W['fwd']
     rvm0 = _W['rvm0']

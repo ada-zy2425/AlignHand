@@ -77,7 +77,17 @@ the sample IDs of every split are in `configs/splits.zip`.
 │   ├── train/                     Stage I, then regional fusion and refinement
 │   ├── lib/                       pipeline, refinement, metrics, HanCo data access
 │   └── download_weights.py
-├── src/mvhand                     model, geometry, fusion, refinement, training, data readers
+├── src/mvhand
+│   ├── prior/                     frozen HaMeR: loading, feature caching
+│   ├── observation/               Stage I: 2D joint correction and per-view support
+│   ├── geometry/                  cameras, triangulation, metric alignment of meshes
+│   ├── fusion/                    regional fusion of the aligned meshes
+│   ├── refinement/                pixel-aligned refinement
+│   ├── pipeline/                  end-to-end forward pass
+│   ├── training/                  Stage I training
+│   ├── data/                      DexYCB, HanCo and HO3D readers
+│   ├── evaluation/                protocol and metrics
+│   └── cli/                       build splits and frozen-HaMeR caches
 ├── media                          figures of this README
 ├── third_party                    (not tracked) HaMeR
 └── data                           (not tracked) datasets, caches, MANO, weights

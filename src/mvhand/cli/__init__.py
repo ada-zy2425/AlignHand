@@ -1,1 +1,1 @@
-"""Command-line entry points for protocol-first experiments."""
+"""Command-line tools that build splits, capture frozen-prior outputs and finalize caches."""

@@ -1,3 +1,4 @@
+"""Camera utilities: homogeneous coordinates, rigid transforms, projection and pixel rays."""
 from __future__ import annotations
 
 import torch

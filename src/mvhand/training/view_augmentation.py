@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields, replace
 import torch
 from torch import Tensor
-from mvhand.models.interfaces import Form2FrameBatch, HandPriorOutput
+from mvhand.interfaces import Form2FrameBatch, HandPriorOutput
 
 
 @dataclass(frozen=True)

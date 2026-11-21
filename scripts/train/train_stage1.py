@@ -14,10 +14,12 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-from mvhand.training.cached_stage1 import (CachedStage1Population,  # noqa
-                                           build_cached_stage1,
-                                           cached_training_loss)
-from mvhand.runtime.precision import configure_transfer_runtime  # noqa
+from mvhand.training.observation_training import (
+    CachedStage1Population,
+    build_cached_stage1,
+    cached_training_loss,
+)
+from mvhand.pipeline.precision import configure_transfer_runtime  # noqa
 
 _MDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                      'manifests')

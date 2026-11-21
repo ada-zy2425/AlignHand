@@ -1,1 +1,1 @@
-"""Calibrated projection, raw-pixel DLT, Plucker rays and robust metric placement."""
+"""Cameras, Plucker rays, support-weighted triangulation and metric alignment of meshes."""

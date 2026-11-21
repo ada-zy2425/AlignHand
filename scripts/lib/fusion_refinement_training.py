@@ -13,15 +13,15 @@ import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 from pipeline import Bundle, guard, HANDOFF  # noqa: E402
-from mvhand.regional.candidates import CandidateEvidenceHead  # noqa: E402
-from mvhand.regional.single_prior import forward_single_prior  # noqa: E402
-from mvhand.regional.training import errors, state_hash  # noqa: E402
+from mvhand.fusion.candidates import CandidateEvidenceHead  # noqa: E402
+from mvhand.fusion.candidate_bank import forward_single_prior  # noqa: E402
+from mvhand.fusion.training import errors, state_hash  # noqa: E402
 from refinement import (build_operators, ref_inputs, batch_extras,  # noqa: E402
                          load_supervision, supervision_batch)
-from mvhand.regional.refinement import MultiViewRefinement  # noqa: E402
-from mvhand.runtime.mano_compat import legacy_mano_imports  # noqa: E402
-from mvhand.training.real import load_mano_base_regressor  # noqa: E402
-from mvhand.training.refinement import refinement_loss  # noqa: E402
+from mvhand.refinement.model import MultiViewRefinement  # noqa: E402
+from mvhand.prior.mano_compat import legacy_mano_imports  # noqa: E402
+from mvhand.training.validation import load_mano_base_regressor  # noqa: E402
+from mvhand.refinement.supervision import refinement_loss  # noqa: E402
 
 A3 = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/results/s1/bundles/hanco_a3")
 OUTROOT = guard(Path(os.environ.get("ALIGNHAND_DATA", "data") + "/results/a3clean"))
