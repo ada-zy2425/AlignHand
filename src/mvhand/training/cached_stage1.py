@@ -33,6 +33,18 @@ def build_cached_stage1(variant, feature_dim=1280):
         residual_temperature=0.5, patch_size=256)
 
 
+def _data_relative(path):
+    """Resolve a manifest-recorded path. Manifests store paths
+    relative to the data root; resolve non-absolute ones against
+    $ALIGNHAND_DATA (default ./data) so the manifest bytes and their
+    locked sha256 stay untouched."""
+    path = Path(path)
+    if path.is_absolute():
+        return path
+    import os
+    return Path(os.environ.get('ALIGNHAND_DATA', 'data')) / path
+
+
 class CachedStage1Population:
     """No dense-map/RGB read is needed to train the small observation heads.
 
@@ -49,7 +61,7 @@ class CachedStage1Population:
         authorize_population(spec['split'], phase=2)
         if spec['split'] not in ('fit', 'development') or spec['status'] != 'COMPLETE':
             raise PermissionError('only complete Fit/Development caches are allowed')
-        prepared = Path(spec['prepared'])
+        prepared = _data_relative(spec['prepared'])
         report = json.loads((prepared/'REPORT.json').read_text())
         if (sha256(prepared/'REPORT.json') != spec['prepared_report_sha256']
                 or report['dataset'] != spec['dataset'] or report['split'] != spec['split']):
@@ -82,7 +94,7 @@ class CachedStage1Population:
         values = {field.name: [] for field in fields(HandPriorOutput)}
         for index in indices:
             entry = self.entries[index]
-            file = Path(entry['file'])
+            file = _data_relative(entry['file'])
             if index not in self.verified:
                 if sha256(file) != entry['sha256']:
                     raise ValueError('frozen prior cache SHA mismatch')
@@ -102,12 +114,12 @@ class CachedStage1Population:
 
     def supervision(self, indices, device):
         if self._targets is None:
-            prepared = Path(self.spec['prepared'])
+            prepared = _data_relative(self.spec['prepared'])
             report = json.loads((prepared/'REPORT.json').read_text())
             target_file = prepared/'PRIVATE_SCORE_TARGETS.npz'
             if sha256(target_file) != report['targets_private_sha256']:
                 raise ValueError('separate supervision identity mismatch')
-            directory = Path(self.spec['supervision'])
+            directory = _data_relative(self.spec['supervision'])
             if sha256(directory/'REPORT.json') != self.spec['supervision_report_sha256']:
                 raise ValueError('Stage I supervision manifest SHA mismatch')
             manifest = json.loads((directory/'REPORT.json').read_text())
