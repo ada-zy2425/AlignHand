@@ -34,8 +34,8 @@ MANIFESTS = {
                            'stage1_dexycb_hamer_fit_local.json'),
     'ho3d': os.path.join(_MDIR, 'stage1_ho3d_hamer_fit_local.json'),
 }
-PIN_HANCO_SHA = ('8446698dd0c85fc5189c174da28c8e6467811b5c20d4c566fd4b1949'
-                 '8311b3aa')
+PIN_HANCO_SHA = ('895ee5aea638fbe9e145935954d7dd51b2f4e4eabe7c96c4f9663315'
+                 'd1fd6a4a')
 LR, WD, CLIP, WARMUP, FLOOR, EB = 7.5e-5, 1e-4, 1.0, 400, 0.1, 4
 
 
