@@ -27,7 +27,6 @@ import torch
 
 import sys
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-sys.path.insert(0, os.environ.get("ALIGNHAND_DATA", "data") + "/handoff/tools")
 from mvhand.geometry.mesh_recovery import recover_positioned_mesh  # noqa: E402
 from mvhand.models.interfaces import Form2FrameBatch, HandPriorOutput  # noqa: E402
 from mvhand.regional.candidates import CandidateEvidenceHead  # noqa: E402
