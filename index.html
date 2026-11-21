@@ -64,7 +64,16 @@
   .tbl table{background:#fff;border-radius:12px}
   .tcap{font-size:15.5px;color:var(--muted);text-align:center;margin:14px auto 30px;max-width:860px}
   .tcap b{color:var(--ink)}
-  .two{display:grid;grid-template-columns:1.15fr 1fr;gap:26px;align-items:start}
+  .two{display:grid;grid-template-columns:1.15fr 1fr;gap:26px;align-items:stretch}
+  .two figure{display:flex;flex-direction:column;margin:26px 0 10px}
+  .two .imgbox{flex:1;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;padding:10px}
+  .two figcaption{margin-top:14px;min-height:4.8em}
+  .small{font-size:14px;color:var(--muted)}
+  details.more{border-top:1px solid var(--line);padding-top:26px}
+  details.more summary{cursor:pointer;list-style:none;text-align:center;font-size:26px;font-weight:600;color:var(--navy);margin-bottom:18px}
+  details.more summary::-webkit-details-marker{display:none}
+  details.more summary::after{content:' +';color:var(--muted);font-weight:400}
+  details.more[open] summary::after{content:' \2212'}
   .two figcaption{text-align:left}
   pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:18px 20px;overflow-x:auto;font-family:"Noto Sans Mono",monospace;font-size:14px;line-height:1.55;color:var(--ink)}
   footer{padding:36px 0 56px;color:var(--muted);font-size:14px;text-align:center}
@@ -110,30 +119,30 @@
 <main class="wrap">
   <figure>
     <img src="static/images/teaser.png" alt="Independent per-view monocular predictions are aligned into one consistent metric reconstruction.">
-    <figcaption><b>Figure 1.</b> Independent monocular predictions from calibrated views disagree in scale, placement and articulation. AlignHand aligns them in one metric frame and integrates their complementary surface evidence. HG: HaMeR + geometry baseline.</figcaption>
+    <figcaption><b>Figure 1.</b> AlignHand brings independent monocular predictions into a shared metric frame and refines their surface geometry. HG denotes the HaMeR + geometry baseline.</figcaption>
   </figure>
 
-  <p class="tagline">From independent monocular predictions to one metric hand.</p>
-  <p class="tagsub">AlignHand aligns and enhances meshes from a frozen monocular estimator using calibrated multi-view observations.</p>
+  <p class="tagline">From independent monocular predictions to a consistent metric hand.</p>
+  <p class="tagsub">AlignHand aligns independent monocular hand meshes from calibrated views and fuses their complementary surface evidence into one consistent metric reconstruction.</p>
 
   <section>
-    <h2>Abstract</h2>
-    <p class="abstract">Modern monocular hand estimators recover detailed 3D meshes from individual images, yet effectively leveraging their predictions across multiple views remains challenging. Independently predicted meshes can disagree in scale, placement, and articulation, limiting the integration of complementary multi-view information. Hence, we present AlignHand, a calibrated multi-view framework that builds on a frozen monocular hand reconstruction prior to align and enhance its predictions. Specifically, AlignHand refines cross-view joint observations and estimates their reliability to establish a shared metric reference for alignment. Once the meshes are brought into a common frame, their complementary surface evidence is selectively fused across anatomical regions, followed by pixel-aligned refinement that predicts bounded residual displacements from local image features. This global-to-local integration enables AlignHand to exploit complementary observations while preserving the strong monocular prior. Extensive experiments on DexYCB-MV, HanCo, and HO3D-Eval-MV demonstrate that AlignHand achieves the lowest MPVPE and MPJPE among the compared methods under the respective evaluation protocols, reducing MPVPE by 30.1%, 29.1%, and 8.0%, respectively, compared with a matched geometry baseline.</p>
+    <h2>In Brief</h2>
+    <p class="abstract">Independent monocular hand meshes can disagree in scale, position and articulation across calibrated views. AlignHand builds on a frozen HaMeR prior to refine the joint observations, align the per-view meshes in a shared metric frame, and integrate their complementary surface evidence. One lightweight integration model, shared across datasets, reduces MPVPE by 30.1%, 29.1% and 8.0% on DexYCB-MV, HanCo and HO3D-Eval-MV relative to a matched geometry baseline.</p>
   </section>
 
   <section>
     <h2>Method</h2>
     <figure>
       <img src="static/images/AlignHand_overview.png" alt="AlignHand overview: observation refinement, metric alignment, surface enhancement.">
-      <figcaption><b>Figure 2.</b> Overview of AlignHand. Observation refinement corrects 2D joints and estimates view support; metric alignment fits each per-view mesh to the support-weighted triangulated skeleton; surface enhancement integrates the aligned candidates into the final mesh.</figcaption>
+      <figcaption><b>Figure 2.</b> AlignHand refines multi-view joint observations, aligns the monocular meshes to a shared metric skeleton, and integrates their complementary surface evidence.</figcaption>
     </figure>
     <div class="stages">
       <div class="stage"><div class="num">STAGE 1</div><h4>Observation refinement</h4>
-        <p>Joint-level tokens from every view attend to each other under a geometry-aware bias. The model predicts bounded 2D joint corrections and a per-joint support weight for each view.</p></div>
+        <p>Cross-view attention corrects the 2D joint observations and estimates a reliability weight for each joint in each view.</p></div>
       <div class="stage"><div class="num">STAGE 2</div><h4>Metric alignment</h4>
-        <p>Support-weighted triangulation gives a shared metric skeleton. Each per-view mesh is placed on it by a similarity fit, and a fit-aware anchor favors predictions that are well supported and agree with the skeleton.</p></div>
+        <p>Reliability-weighted triangulation gives a shared metric skeleton. Each monocular mesh is aligned to it with a similarity transform, and a fit-aware anchor favors the predictions most consistent with it.</p></div>
       <div class="stage"><div class="num">STAGE 3</div><h4>Surface enhancement</h4>
-        <p>Anchor-centred regional fusion re-weights the aligned candidates separately for the palm and each finger. Pixel-aligned refinement then adds bounded residuals (at most 5&nbsp;mm per coordinate) from local image features.</p></div>
+        <p>The aligned meshes are fused separately for the palm and each finger, then refined with local image features.</p></div>
     </div>
     <p class="keyline">Frozen monocular backbone &middot; 0.98M trainable integration parameters &middot; One shared integration model</p>
     <p class="note">The shared model is trained on the pooled training splits of DexYCB, HanCo, and HO3D.</p>
@@ -141,7 +150,7 @@
 
   <section>
     <h2>Results</h2>
-    <p class="lead">MPVPE / MPJPE (mm, lower is better) of one shared model on three test sets.</p>
+    <p class="lead">Test-set MPVPE / MPJPE (mm, lower is better) of one shared model.</p>
     <div class="tbl"><table>
       <thead><tr><th>Dataset</th><th>Views</th><th>HG</th><th>AlignHand</th><th>MPVPE reduction</th></tr></thead>
       <tbody>
@@ -150,16 +159,17 @@
         <tr><td>HO3D-Eval-MV</td><td>5</td><td>11.119 / 10.875</td><td class="best">10.233 / 9.882</td><td class="best">8.0%</td></tr>
       </tbody>
     </table></div>
-    <p class="tcap"><b>Table 1.</b> HG (HaMeR + geometry) uses the same frozen HaMeR predictions, crops, calibration and similarity fitting, so the comparison isolates the gain from integration. Each dataset follows its own evaluation protocol; HanCo uses root-translation alignment. HO3D-Eval-MV is the primary HO3D evaluation because HO3D-MV shares camera sequences with HaMeR's training data. Comparisons with published multi-view methods are in the paper.</p>
+    <p class="tcap"><b>Table 1.</b> HG is the matched HaMeR + geometry baseline: same frozen HaMeR predictions, crops, calibration and similarity fitting.<br><span class="small">Protocols differ across datasets; HanCo uses root-translation alignment. HO3D-Eval-MV is the primary HO3D evaluation because HO3D-MV shares camera sequences with HaMeR&rsquo;s training data. Comparisons with published multi-view methods are in the paper.</span></p>
 
     <figure>
       <img src="static/images/comparison_preview.png" alt="Qualitative comparison on DexYCB-MV and HO3D-MV.">
-      <figcaption><b>Figure 3.</b> Qualitative comparison on DexYCB-MV and HO3D-MV test examples; each row shows three of the synchronized input views. &ldquo;Other multi-view&rdquo; is WiLoR + geometry on DexYCB-MV and POEMv2-large on HO3D-MV. Errors use a 0–10&nbsp;mm scale; improvement maps show the error reduction over HG.</figcaption>
+      <figcaption><b>Figure 3.</b> Qualitative comparisons on DexYCB-MV and HO3D-MV, three input views per example. &ldquo;Other multi-view&rdquo; is WiLoR + geometry on DexYCB-MV and POEMv2-large on HO3D-MV; improvement maps are relative to HG.</figcaption>
     </figure>
   </section>
 
   <section>
-    <h2>Ablation Study</h2>
+    <details class="more">
+    <summary>Additional Analysis</summary>
     <p class="lead">Development-set MPVPE (mm, lower is better) of the shared model.</p>
     <div class="tbl"><table>
       <thead><tr><th>Configuration</th><th>DexYCB</th><th>HO3D</th></tr></thead>
@@ -170,7 +180,7 @@
         <tr class="ours"><td>+ Pixel-aligned refinement (AlignHand)</td><td class="best">3.409</td><td>3.562</td></tr>
       </tbody>
     </table></div>
-    <p class="tcap"><b>Table 2.</b> Successive reconstruction stages. Most of the gain comes from alignment; regional fusion helps on both datasets, while pixel-aligned refinement has dataset-dependent effects.</p>
+    <p class="tcap"><b>Table 2.</b> Error after each stage. Regional fusion improves both datasets; pixel-aligned refinement helps on DexYCB but not on HO3D.</p>
 
     <div class="tbl"><table>
       <thead><tr><th>Observation refinement (anchor only)</th><th>DexYCB</th><th>HO3D</th></tr></thead>
@@ -181,18 +191,19 @@
         <tr><td>No correction; uniform support</td><td>5.540</td><td>4.155</td></tr>
       </tbody>
     </table></div>
-    <p class="tcap"><b>Table 3.</b> Fixed-checkpoint interventions at the anchor. Both the 2D correction and the predicted view support contribute; the final row differs from HG only in anchor weighting.</p>
+    <p class="tcap"><b>Table 3.</b> Ablation of 2D joint correction and predicted view reliability at the aligned anchor (fixed checkpoint).</p>
 
     <div class="two">
       <figure>
-        <img src="static/images/ablation_preview.png" alt="Stage-wise reconstructions.">
-        <figcaption><b>Figure 4.</b> Stage-wise reconstructions on development examples. Most of the error reduction comes from HG to the aligned anchor; fusion and refinement make more local changes.</figcaption>
+        <div class="imgbox"><img src="static/images/ablation_preview.png" alt="Stage-wise reconstructions."></div>
+        <figcaption><b>Figure 4.</b> Stage-wise reconstructions on development examples. Most of the error reduction comes from metric alignment.</figcaption>
       </figure>
       <figure>
-        <img src="static/images/views.png" alt="MPVPE versus number of input views.">
-        <figcaption><b>Figure 5.</b> Development MPVPE versus number of input views, with the same shared weights. On DexYCB the gain over HG grows from 1.72&nbsp;mm (3 views) to 2.16&nbsp;mm (8 views). Curves average three nested camera draws; bands show their range.</figcaption>
+        <div class="imgbox"><img src="static/images/views.png" alt="MPVPE versus number of input views."></div>
+        <figcaption><b>Figure 5.</b> Development MPVPE versus number of input views. Curves average three nested camera draws; bands show their range.</figcaption>
       </figure>
     </div>
+    </details>
   </section>
 
   <section id="bibtex">
@@ -201,7 +212,6 @@
   title  = {AlignHand: Multi-View Hand Reconstruction from a Frozen Monocular Prior},
   author = {Yang, Zhilu and Yang, Kun and Wang, Shiyan and Xu, Anqi and Huang, Xinran
             and Jiao, Yizheng and Yang, Huan and Potamias, Rolandos Alexandros},
-  note   = {arXiv preprint},
   year   = {2026}
 }</pre>
   </section>
