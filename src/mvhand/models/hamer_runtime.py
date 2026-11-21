@@ -111,6 +111,11 @@ def load_hamer_renderer_free(source_root: Path, checkpoint: Path) -> tuple[nn.Mo
 
 def load_canonical_hamer(assets: Form2FrameRuntimeAssets) -> tuple[nn.Module, object]:
     """Validate the runtime bundle once and construct renderer-free HaMeR."""
+    from mvhand.numpy_compat import install_numpy_chumpy_compat
+    # smplx unpickles the licensed MANO file through chumpy, whose last
+    # release still imports NumPy aliases removed in NumPy 1.24; restore
+    # them at this licensed-asset boundary (no numerics change).
+    install_numpy_chumpy_compat()
     assets.validate()
     source_root = Path(assets.hamer_source).resolve()
     install_renderer_free_hamer_namespace(source_root)
