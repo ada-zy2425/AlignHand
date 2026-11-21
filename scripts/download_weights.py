@@ -1,10 +1,10 @@
-"""Download the AlignHand U2 checkpoints and verify their sha256.
+"""Download the AlignHand weights and verify their sha256 (configs/weights.json).
 
-    python checkpoints/download.py                    # into $ALIGNHAND_DATA (default: data/)
-    python checkpoints/download.py --root /path/data  # explicit data root
-    python checkpoints/download.py --from-dir DIR     # files already downloaded by hand
+    python scripts/download_weights.py                    # into $ALIGNHAND_DATA (default: data/)
+    python scripts/download_weights.py --root /path/data  # explicit data root
+    python scripts/download_weights.py --from-dir DIR     # files already downloaded by hand
 
-Files are placed in the layout the scripts under reproduce/ expect.
+Files are placed in the layout the evaluation and demo scripts expect.
 """
 import argparse
 import hashlib
@@ -15,7 +15,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def sha256(path):
@@ -30,7 +30,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", type=Path, default=Path(os.environ.get("ALIGNHAND_DATA", "data")))
     ap.add_argument("--from-dir", type=Path, default=None)
-    ap.add_argument("--manifest", type=Path, default=HERE / "MANIFEST.json")
+    ap.add_argument("--manifest", type=Path, default=ROOT / "configs" / "weights.json")
     a = ap.parse_args(argv)
     man = json.loads(a.manifest.read_text())
     bad = 0

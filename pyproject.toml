@@ -13,7 +13,6 @@ dependencies = ["numpy>=1.24,<2", "torch>=2.1", "PyYAML>=6.0"]
 
 [project.optional-dependencies]
 data = ["opencv-python-headless>=4.7,<4.12", "webdataset>=0.2.86", "smplx>=0.1.28", "scipy"]
-dev = ["pytest>=7.0"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -21,7 +20,3 @@ package-dir = { "" = "src" }
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["mvhand*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"

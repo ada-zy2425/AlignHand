@@ -1,148 +1,124 @@
 # AlignHand: Multi-View Hand Reconstruction from a Frozen Monocular Prior
 
-[**Project page**](https://ada-zy2425.github.io/AlignHand/) ·
-[**Paper**](docs/static/AlignHand.pdf) ·
-[**Checkpoints**](https://github.com/ada-zy2425/AlignHand/releases/tag/v1.0)
+> **AlignHand: Multi-View Hand Reconstruction from a Frozen Monocular Prior**
+>
+> Zhilu Yang, Kun Yang, Shiyan Wang, Anqi Xu, Xinran Huang, Yizheng Jiao, Huan Yang,
+> [Rolandos Alexandros Potamias](https://rolpotamias.github.io/)
+>
+> [Project Page](https://ada-zy2425.github.io/AlignHand/) · [Paper](https://ada-zy2425.github.io/AlignHand/static/AlignHand.pdf)
 
-*From independent monocular predictions to one metric hand.*
+<p align="center">
+  <img src="media/teaser.jpg" width="820" />
+</p>
 
-AlignHand aligns and enhances meshes from a frozen monocular estimator (HaMeR)
-using calibrated multi-view observations:
+## 🗺️ Overview
 
-1. **Observation refinement**: joint-level tokens from every view attend to each
-   other under a geometry-aware bias, predicting bounded 2D joint corrections and
-   per-joint view support.
-2. **Metric alignment**: support-weighted triangulation gives a shared metric
-   skeleton; each per-view mesh is placed on it by a similarity fit, and a
-   fit-aware anchor is selected.
-3. **Surface enhancement**: anchor-centred regional fusion re-weights the aligned
-   candidates for the palm and each finger, then pixel-aligned refinement adds
-   bounded residuals (at most 5 mm per coordinate).
+AlignHand keeps a monocular hand estimator (HaMeR) frozen and turns its independent
+per-view predictions into one metric hand. It refines the cross-view joint
+observations, aligns every per-view mesh to a shared metric skeleton, then fuses the
+aligned meshes region by region and adds a bounded pixel-aligned correction. One shared
+model with 0.98M trainable parameters is used for all datasets.
 
-Frozen monocular backbone · 0.98M trainable integration parameters · one shared
-integration model, trained on the pooled training splits of DexYCB, HanCo and HO3D.
+<p align="center">
+  <img src="media/overview.jpg" width="820" />
+</p>
 
-## Results
+| MPVPE / MPJPE (mm) | HaMeR + geometry | AlignHand |
+|---|---|---|
+| DexYCB-MV | 5.997 / 5.892 | **4.193 / 4.090** |
+| HanCo | 7.166 / 6.643 | **5.083 / 4.587** |
+| HO3D-Eval-MV | 11.119 / 10.875 | **10.233 / 9.882** |
+| HO3D-MV | 5.252 / 5.034 | **4.625 / 4.332** |
 
-MPVPE / MPJPE in mm of the shared model (lower is better).
+<p align="center">
+  <img src="media/qualitative.jpg" width="820" />
+</p>
 
-| Dataset | Views | HG | AlignHand | MPVPE reduction |
-|---|---|---|---|---|
-| DexYCB-MV | 8 | 5.997 / 5.892 | **4.193 / 4.090** | 30.1% |
-| HanCo | 8 | 7.166 / 6.643 | **5.083 / 4.587** | 29.1% |
-| HO3D-Eval-MV | 5 | 11.119 / 10.875 | **10.233 / 9.882** | 8.0% |
+## ⚙️ Setup
 
-HG (HaMeR + geometry) uses the same frozen HaMeR predictions, crops, calibration
-and similarity fitting. Each dataset follows its own evaluation protocol; HanCo
-uses root-translation alignment. Comparisons with published multi-view methods
-are in Table 1 of the paper.
-
-## Repository layout
-
-```
-src/mvhand/     implementation: models, geometry, regional fusion, refinement, training, evaluation;
-                src/mvhand/cli/ holds the prior-capture and cache tools
-scripts/
-  demo/         run AlignHand on one multi-view group
-  train/        train the shared model
-  eval/         every result in the paper (table below)
-  lib/          helpers shared by the scripts above
-checkpoints/    MANIFEST.json (sha256) + download.py
-configs/        HaMeR config example, training configuration, recorded environment
-splits/         group identifiers of every split (IDs only)
-docs/           project page
-```
-
-## Installation
-
-```bash
+```shell
 git clone https://github.com/ada-zy2425/AlignHand.git && cd AlignHand
 pip install -e ".[data]"
-pip install chumpy==0.70 --no-build-isolation   # needed by HaMeR to read MANO
+pip install chumpy==0.70 --no-build-isolation
 ```
 
-All results were produced with Python 3.10, PyTorch 2.7.1 and NumPy 1.26
-(full pins in [`configs/requirements-lock.txt`](configs/requirements-lock.txt)).
-On a bare Linux machine, OpenCV may also need `apt install libgl1 libglib2.0-0`.
+Results were produced with Python 3.10, PyTorch 2.7.1 and NumPy 1.26
+(`configs/requirements-lock.txt`). Accept the licences of [HaMeR](https://github.com/geopavlakos/hamer)
+and [MANO](https://mano.is.tue.mpg.de/), clone HaMeR with its checkpoint into
+`third_party/hamer`, and put `MANO_RIGHT.pkl` both where HaMeR expects it and in `data/`.
 
-The frozen prior needs the official [HaMeR](https://github.com/geopavlakos/hamer)
-code and checkpoint, and [MANO](https://mano.is.tue.mpg.de/) (`MANO_RIGHT.pkl`).
-[DATA.md](DATA.md) lists every external asset, where to get it and its expected sha256.
+## 📦 Trained Models
 
-## Checkpoints
+The model is 7.9 MB in total. Download it into `data/` and verify it with
 
-The shared model is 7.9 MB in total (five files, sha256 in
-[`checkpoints/MANIFEST.json`](checkpoints/MANIFEST.json)):
-
-```bash
-python checkpoints/download.py --root data   # downloads the v1.0 release and verifies sha256
+```shell
+python scripts/download_weights.py
 ```
 
-## Demo
+## 💾 Data
 
-```bash
-python scripts/demo/make_mano_assets.py --mano MANO_RIGHT.pkl --out data/handoff/models/assets
-python scripts/demo/infer.py \
-  --spec group.json --hamer-config configs/hamer_prior.example.json \
+Download [DexYCB](https://dex-ycb.github.io/), [HanCo](https://lmb.informatik.uni-freiburg.de/projects/contrastive_hands/)
+and [HO3D v3](https://github.com/shreyashampali/ho3d) from their official pages. The
+prepared views and frozen-HaMeR caches are built with the tools in `src/mvhand/cli/`;
+the sample IDs of every split are in `configs/splits.zip`.
+
+## 🌳 Folder structure
+
+```
+├── configs          HaMeR config example, weight list, split IDs, environment
+├── media
+├── scripts
+│   ├── demo         run AlignHand on one multi-view group
+│   ├── eval         test sets (Table 1) and stage-wise analysis (Table 2)
+│   ├── train        train the shared model
+│   └── lib
+├── src/mvhand       model, geometry, fusion, refinement, training
+├── third_party      (not tracked) HaMeR
+└── data             (not tracked) datasets, caches, MANO, weights
+```
+
+## 🚀 Running AlignHand
+
+Run on one multi-view group (images, intrinsics, camera poses and hand boxes in `group.json`):
+
+```shell
+python scripts/demo/make_mano_assets.py --mano data/MANO_RIGHT.pkl --out data/handoff/models/assets
+python scripts/demo/infer.py --spec group.json --hamer-config configs/hamer_prior.example.json \
   --stage1 data/results/u2/stage1_s20261023/CHECKPOINT_UPDATE_16800.pt \
   --r data/results/u2/r_s20261023/R_FINAL.pt --ref data/results/u2/ref_s20261023/REF_FINAL.pt \
   --stats data/results/u2/U2_GEOMETRY_STATS.pt \
   --region-basis data/handoff/models/assets/region_mask_b_778x6.npy \
-  --mano MANO_RIGHT.pkl --out outputs/ --device cuda
+  --mano data/MANO_RIGHT.pkl --out outputs/
 ```
 
-`group.json` describes the synchronized views of one hand: `images` (V paths),
-`intrinsics` (V×3×3), `camera_to_world` (V×4×4) and `boxes` (V × `[cx, cy, side]`
-in pixels; the 2.5× crop expansion is applied by the script). The demo writes the
-final mesh (`.obj`) and 21 joints (`.json`) in the reference camera frame. Fill in
-the sha256 placeholders of the HaMeR config example with `sha256sum` of your files.
+Reproduce the paper:
 
-## Reproducing the paper
+```shell
+python scripts/eval/test_dexycb.py                     # Table 1; also test_hanco.py run, test_ho3d_eval_mv.py, test_ho3d_mv.py
+python scripts/eval/dev_analysis.py --dataset dexycb   # Table 2, stage by stage
+bash scripts/train/run_all.sh                          # training
+```
 
-All scripts read data and write results under `$ALIGNHAND_DATA` (see [DATA.md](DATA.md)).
+A fresh install with only the released model reproduces every number in Table 1 to
+within 0.0005 mm.
 
-| Paper | Script |
-|---|---|
-| Table 1, DexYCB-MV | `scripts/eval/test_dexycb.py` |
-| Table 1, HanCo | `scripts/eval/test_hanco.py run` |
-| Table 1, HO3D-Eval-MV | `scripts/eval/test_ho3d_eval_mv.py` |
-| Table 1, HO3D-MV | `scripts/eval/test_ho3d_mv.py` |
-| Table 2, stage-wise (development) | `scripts/eval/dev_analysis.py --dataset dexycb` (or `ho3d`) |
-| Training | `scripts/train/run_all.sh` |
+## 🙏 Acknowledgements
 
-The stage-wise analysis shows the contribution of each component. With the released
-checkpoints, the development MPVPE (mm) is reproduced to within 0.0004 mm:
+We thank the authors of [HaMeR](https://github.com/geopavlakos/hamer), [MANO](https://mano.is.tue.mpg.de/),
+[DexYCB](https://dex-ycb.github.io/), [HanCo](https://lmb.informatik.uni-freiburg.de/projects/contrastive_hands/)
+and [HO3D](https://github.com/shreyashampali/ho3d).
 
-| Stage | DexYCB dev | HO3D dev |
-|---|---|---|
-| HG | 5.567 | 4.161 |
-| Aligned anchor | 3.724 | 3.532 |
-| + Regional fusion | 3.545 | 3.449 |
-| + Pixel-aligned refinement | 3.409 | 3.562 |
+## 📜 Citation
 
-In the outputs, `HG` is the geometry baseline, `u2_A` the aligned anchor,
-`u2_X_R` the regionally fused mesh and `u2_Full` the final AlignHand result.
-Table 1 reports `abs_v` / `abs_j21` (MPVPE / MPJPE) for DexYCB-MV and both HO3D
-sets, and `ust_mpvpe_root` / `ust_mpjpe_root` for HanCo.
-
-A fresh install of this repository with only the released checkpoints and the
-public assets reproduces every number in Table 1 to within 0.0005 mm. Training scripts accept
-`--device cpu` for a quick smoke test (`train_stage1.py --smoke 20`).
-
-## Citation
-
-```bibtex
+```
 @misc{yang2026alignhand,
   title  = {AlignHand: Multi-View Hand Reconstruction from a Frozen Monocular Prior},
   author = {Yang, Zhilu and Yang, Kun and Wang, Shiyan and Xu, Anqi and Huang, Xinran
             and Jiao, Yizheng and Yang, Huan and Potamias, Rolandos Alexandros},
-  note   = {arXiv preprint},
   year   = {2026}
 }
 ```
 
-## License and acknowledgements
+## 👩‍⚖️ License
 
-Code is released under the MIT License. HaMeR, MANO, DexYCB, HanCo and HO3D are
-subject to their own licences. We thank the authors of
-[HaMeR](https://github.com/geopavlakos/hamer) and of the datasets.
+Code is released under the [MIT License](LICENSE). HaMeR, MANO and the datasets are subject to their own licences.

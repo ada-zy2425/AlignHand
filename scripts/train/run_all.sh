@@ -3,7 +3,7 @@
 # splits of DexYCB, HanCo and HO3D.
 #   1. Stage I observation refinement (16,800 updates, seed 20261023)
 #   2. bundles -> pooled geometry statistics -> regional fusion R -> refinement Ref
-# Requires the prepared populations and HaMeR caches described in DATA.md.
+# Requires the prepared populations and HaMeR caches described in the README.
 set -euo pipefail
 : "${ALIGNHAND_DATA:?set ALIGNHAND_DATA to your data root}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
