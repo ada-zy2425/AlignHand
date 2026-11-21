@@ -259,13 +259,19 @@ def main():
     # ONE targets read: binding row + scoring
     gt_all = np.load(PREP / "PRIVATE_SCORE_TARGETS.npz",
                      allow_pickle=False)["vertices_reference_m"].astype(np.float64)
-    binding = binding_row(rows, gt_all, q21)
-    (OUT / "BINDING_ROW.json").write_text(json.dumps(
-        dict(binding_row=binding, n=len(rows),
-             source="frozen v2 release ho3d-l0-predictions-v2 vs rebuilt POEM targets"),
-        indent=1))
-    print("BINDING", json.dumps({k: v["delta_mm"] for k, v in binding.items()}),
-          flush=True)
+    if (REL / "records").is_dir():
+        binding = binding_row(rows, gt_all, q21)
+        (OUT / "BINDING_ROW.json").write_text(json.dumps(
+            dict(binding_row=binding, n=len(rows),
+                 source="frozen v2 release ho3d-l0-predictions-v2 vs rebuilt POEM targets"),
+            indent=1))
+        print("BINDING", json.dumps(
+            {k: v["delta_mm"] for k, v in binding.items()}), flush=True)
+    else:
+        binding = None
+        print("BINDING skipped: legacy ho3d-l0-predictions-v2 record "
+              "store not present (internal historical cross-check only; "
+              "no effect on HG/u2 scoring)", flush=True)
     boot = M2.SeqBoot(seqs)
     code_sha = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]
     long_rows, summ = [], []
@@ -326,7 +332,8 @@ def main():
         n_expected=len(rows), n_scored=len(pop),
         coverage=round(len(pop) / len(rows), 4), by_sequence=cov,
         fails=json.loads(str(z["fails"])), smoke=False,
-        binding_row_deltas={k: v["delta_mm"] for k, v in binding.items()},
+        binding_row_deltas=({k: v["delta_mm"] for k, v in binding.items()}
+                            if binding else "skipped (store absent)"),
         reader_shas=shas), indent=1))
     (OUT / "ACCESS_LEDGER.json").write_text(json.dumps(dict(
         poem_targets_reads={"single_session": 1,
