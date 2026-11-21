@@ -99,6 +99,8 @@ def main():
                     help='comma list; single-ds stage1 budgets 8000/8000/800')
     ap.add_argument('--updates', type=int, default=None)
     ap.add_argument('--smoke', type=int, default=0)
+    ap.add_argument('--device', default='',
+                    help="cuda[:N] or cpu (default: cuda if available)")
     ap.add_argument('--row-uniform', action='store_true',
                     help='sample uniformly over ALL rows of all populations '
                          '(single-segment canonical sampler) instead of '
@@ -139,7 +141,8 @@ def main():
     np.random.seed(a.seed % (2 ** 31))
     random.seed(a.seed)
     configure_transfer_runtime()
-    device = 'cuda'
+    device = a.device if a.device else (
+        'cuda' if torch.cuda.is_available() else 'cpu')
     model = build_cached_stage1('M1').to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WD,
                             betas=(0.9, 0.999), eps=1e-8)
@@ -201,7 +204,8 @@ def main():
         endpoint=f'CHECKPOINT_UPDATE_{total:05d}.pt',
         trainable_state_sha256=state_sha,
         per_dataset=seq_cov, elapsed_sec=round(time.time() - t0, 1),
-        gpu=torch.cuda.get_device_name(0),
+        gpu=(torch.cuda.get_device_name(0)
+             if device.startswith('cuda') else 'cpu'),
         note='shared parameters only; all three datasets update ONE '
              'state_dict; endpoint = final update (pre-registered)',
         history_tail=hist[-5:]), indent=1))
