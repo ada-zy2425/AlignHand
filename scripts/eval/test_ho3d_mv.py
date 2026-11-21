@@ -1,9 +1,11 @@
-"""STAGE6_FINAL_V4_HO3D_POEM (FINAL_PLAN_4.json): the one POEM HO3D-MV
-terminal-test confirmation batch (frozen v6 2706-group benchmark), scored
-against the rebuilt POEM PRIVATE_SCORE_TARGETS, identity V6_HO3D_COMPLETION.
-Endpoints exported target-free; ONE targets read (binding row + scoring).
+"""Table 1, HO3D-MV test set (2,706 groups; 2,702 scored).
 
-usage: test_ho3d_mv.py [--limit N]   # --limit: endpoints only, NO targets read
+The POEM HO3D multi-view benchmark; 4 groups with a degenerate reference-view
+box are excluded from scoring. Runs the frozen HaMeR prior and the released
+AlignHand model; MPVPE / MPJPE in fields abs_v / abs_j21 (mm).
+Output arms: HG, u2_A, u2_X_R, u2_Full (AlignHand).
+
+usage: test_ho3d_mv.py [--limit N]   # --limit: predict N groups only, no scoring
 """
 import os
 import argparse, csv, hashlib, json, sys, time
@@ -15,7 +17,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-import metrics2 as M2  # noqa: E402
+import metrics as M2  # noqa: E402
 
 PREP = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/prepared/v7_ho3d_poemtest2706_v1")
 CACHE = Path(os.environ.get("ALIGNHAND_DATA", "data") + "/caches/ho3d/v7_poemtest_ho3d_hamer_00000_02706_v1")
@@ -40,10 +42,10 @@ _W = {}
 
 
 def _patch():
-    import s_common
-    from s_common import F2F, PREPARED, guard
+    import pipeline
+    from pipeline import F2F, PREPARED, guard
     PREPARED[("ho3d", "poemtest")] = PREP
-    orig = s_common.cache_files
+    orig = pipeline.cache_files
 
     def cache_files(ds, split):
         if ds != "ho3d" or split != "poemtest":
@@ -57,13 +59,13 @@ def _patch():
         assert len(rows) == len(files)
         return files, rows, prepared
 
-    s_common.cache_files = cache_files
-    return s_common
+    pipeline.cache_files = cache_files
+    return pipeline
 
 
 def _build_ref(path):
     import torch
-    from ref23_train import build_operators
+    from refinement import build_operators
     from mvhand.regional.refinement import MultiViewRefinement
     m = MultiViewRefinement(build_operators(), displacement_bound_m=.005,
                             include_correction_magnitude=True)
@@ -110,7 +112,7 @@ def _init():
 
 def _endpoints(stack, i):
     import torch
-    from ref23_train import ref_inputs
+    from refinement import ref_inputs
     fwd = stack["fwd"]
     out = fwd.forward([i])
     if out is None:
@@ -302,7 +304,7 @@ def main():
                 coverage=round(len(pop) / len(rows), 4),
                 ci_low=round(ci90[0], 6), ci_high=round(ci90[1], 6),
                 run_id="STAGE6_FINAL_V4_HO3D_POEM", ckpt_sha="see_plan",
-                eval_key="metrics2@" + code_sha,
+                eval_key="metrics@" + code_sha,
                 input_provenance_key="v7_ho3d_poemtest2706_v1",
                 code_sha=code_sha, status="SUCCEEDED", reason=""))
             if m == "abs_v":

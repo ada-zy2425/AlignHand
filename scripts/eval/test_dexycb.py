@@ -1,11 +1,11 @@
-"""STAGE6_FINAL_V2_DEXYCB: the one DexYCB official-identifier S0-TEST batch
-(FINAL_PLAN_2.json). Endpoints exported GT-free, ONE scoring read.
+"""Table 1, DexYCB-MV test set (4,951 groups, 8 views).
 
-Stacks (per plan rows): U1_DEX (default dexycb FrozenForward: M1 + shipped R
-s23 + its stats) with gate3 Refs s25/26/27 (gamma .5) and u15a Ref (gamma 1);
-U2_SHARED (E3 stack); U2F_MERGED (u2merged lock). Arms: HG, A/X_R per stack,
-Full per Ref. Output: results/paper/final_dexycb/.
-usage: test_dexycb.py [--limit N]
+Runs the frozen HaMeR prior and the released AlignHand model on every test
+group, then scores MPVPE / MPJPE (fields abs_v / abs_j21, in mm).
+Output arms: HG (HaMeR + geometry baseline), u2_A (aligned anchor),
+u2_X_R (+ regional fusion), u2_Full (AlignHand).
+
+usage: test_dexycb.py [--limit N]   # --limit: predict N groups only, no scoring
 """
 import os
 import argparse, csv, hashlib, json, sys, time
@@ -17,7 +17,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-import metrics2 as M2  # noqa: E402
+import metrics as M2  # noqa: E402
 
 PREP = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/prepared/v21_dexycb_tst_s0_v1')
 CACHE = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/caches/dexycb/v21_s0_dexycb_tst_hamer_s25_v1')
@@ -37,10 +37,10 @@ _W = {}
 
 
 def _patch():
-    import s_common
-    from s_common import F2F, PREPARED, guard
+    import pipeline
+    from pipeline import F2F, PREPARED, guard
     PREPARED[('dexycb', 'tst')] = F2F / 'prepared/v21_dexycb_tst_s0_v1'
-    orig = s_common.cache_files
+    orig = pipeline.cache_files
 
     def cache_files(ds, split):
         if ds != 'dexycb' or split != 'tst':
@@ -54,13 +54,13 @@ def _patch():
         assert len(rows) == len(files)
         return files, rows, prepared
 
-    s_common.cache_files = cache_files
-    return s_common
+    pipeline.cache_files = cache_files
+    return pipeline
 
 
 def _build_ref(path):
     import torch
-    from ref23_train import build_operators
+    from refinement import build_operators
     from mvhand.regional.refinement import MultiViewRefinement
     m = MultiViewRefinement(build_operators(), displacement_bound_m=.005,
                             include_correction_magnitude=True)
@@ -109,7 +109,7 @@ def _init():
 
 def _endpoints(stack, i):
     import torch
-    from ref23_train import ref_inputs
+    from refinement import ref_inputs
     fwd = stack['fwd']
     out = fwd.forward([i])
     if out is None:
@@ -267,7 +267,7 @@ def main():
                 coverage=round(len(pop) / len(rows), 4),
                 ci_low=round(ci90[0], 6), ci_high=round(ci90[1], 6),
                 run_id='STAGE6_FINAL_V2_DEXYCB', ckpt_sha='see_plan',
-                eval_key=f'metrics2@{code_sha}',
+                eval_key=f'metrics@{code_sha}',
                 input_provenance_key='v21_dexycb_tst_s0_v1',
                 code_sha=code_sha, status='SUCCEEDED', reason=''))
             if m == 'abs_v':

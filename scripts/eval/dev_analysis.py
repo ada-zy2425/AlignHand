@@ -21,7 +21,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-import metrics2 as M2  # noqa: E402
+import metrics as M2  # noqa: E402
 
 F2F = Path(os.environ.get('ALIGNHAND_DATA', 'data'))
 U2 = F2F / 'results/u2'
@@ -36,10 +36,10 @@ _W = {}
 
 def u2_forward(ds):
     import torch
-    import s_common as S
+    import pipeline as S
     from mvhand.regional.candidates import CandidateEvidenceHead
     if ds == 'hanco_a3':
-        import a3_3view_eval  # noqa: F401 (installs hanco_a3 patches)
+        import hanco  # noqa: F401 (installs hanco_a3 patches)
     fwd = S.FrozenForward(ds, 'development')
     ck = torch.load(U2 / 'stage1_s20261023/CHECKPOINT_UPDATE_16800.pt',
                     map_location='cpu', weights_only=False)
@@ -58,7 +58,7 @@ def u2_forward(ds):
 
 def u2_ref():
     import torch
-    from ref23_train import build_operators
+    from refinement import build_operators
     from mvhand.regional.refinement import MultiViewRefinement
     m = MultiViewRefinement(build_operators(), displacement_bound_m=.005,
                             include_correction_magnitude=True)
@@ -70,7 +70,7 @@ def u2_ref():
 
 def full_from_out(out, refm):
     import torch
-    from ref23_train import ref_inputs
+    from refinement import ref_inputs
     t = torch.as_tensor
     x0 = t(out['x0']).double()
     extras = {k: t(out[k]) for k in
@@ -256,9 +256,9 @@ def main():
     ap.add_argument('--workers', type=int, default=24)
     a = ap.parse_args()
     ds, task = a.dataset, a.task
-    import s_common as S
+    import pipeline as S
     if ds == 'hanco_a3':
-        import a3_export_bundles  # noqa: F401
+        import hanco_bundles  # noqa: F401
     files, rows_j, prepared = S.cache_files(ds, 'development')
     n = len(rows_j) if not a.limit else a.limit
     ids = list(range(n))

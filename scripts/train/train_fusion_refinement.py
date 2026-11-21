@@ -1,27 +1,13 @@
-"""Stage 6 E3 steps 2-5: U2 bundles -> union stats -> shared R -> shared Ref
--> three-dataset Dev endpoint export (spec B2). One real chain, one shared
-state_dict per stage; markers make every step resumable and idempotent.
+"""Train regional fusion (R) and pixel-aligned refinement (Ref) on top of Stage I.
 
-Steps (--step, default 'all'):
-  export   : re-export fit + dev bundles per dataset with the U2 shared
-             Stage I swapped in BEFORE the forward (same group indices as
-             the registered fit8192 / devfull bundles; bundle x0 column is
-             shipped-R-on-U2-banks and is NOT used downstream).
-  stats    : ONE 104-dim geometry mean/scale fitted on the UNION of the
-             three U2 fit bundles (clean_stats formula).
-  train-r  : ONE CandidateEvidenceHead on the union; recipe = clean-retrain
-             R (AdamW 3e-4 wd 1e-4, batch 64, loss (v+.5j).mean());
-             budget = presentation sum of the three single-ds recipes:
-             10*(8192+8192+4056)/64 = 3194 updates; sampling ds-equal ->
-             sequence-equal -> row; endpoint = final update.
-  train-ref: ONE MultiViewRefinement (gate3 constants: 3840 updates,
-             microbatch 8 / effective 64, bound .005, zero-identity gate),
-             x0 recomputed LIVE from the shared R (never the bundle x0).
-  eval     : per dataset dev bundle, export endpoints A / U2-R / U2-Full
-             (gamma 0.5 outside-blend is NOT applied: Ref output is the
-             endpoint, mirroring the a3clean convention) as PRED npz for
-             the metrics-v2 scorer.
-usage: train_fusion_refinement.py [--step all] [--seed 20261023] [--device cuda:0]
+Steps (--step, default all), each resumable:
+  export     run the trained Stage I and save per-group inputs for R and Ref
+  stats      geometry normalisation statistics over the pooled training splits
+  train-r    train regional fusion R
+  train-ref  train pixel-aligned refinement Ref
+  eval       evaluate the stages on the development splits
+
+usage: train_fusion_refinement.py [--step STEP] [--seed S] [--workers N]
 """
 import os
 import argparse, json, sys, time
@@ -62,34 +48,34 @@ ACTIVE = list(DSS)
 
 def patched_export(ds, split, indices, out_dir, seed, workers):
     """export_bundle with the U2 shared Stage I swapped into every worker."""
-    import s_common
+    import pipeline
     if ds == 'hanco_a3':
-        import a3_export_bundles  # noqa: F401 (prepared/cache patches)
-    orig_init = s_common._init
+        import hanco_bundles  # noqa: F401 (prepared/cache patches)
+    orig_init = pipeline._init
     ckpt_path = str(stage_ckpt(seed, ACTIVE))
 
     def init_u2(ds_, split_):
         orig_init(ds_, split_)
         ck = torch.load(ckpt_path, map_location='cpu', weights_only=False)
-        fwd = s_common._CTX['fwd']
+        fwd = pipeline._CTX['fwd']
         fwd.stage.load_state_dict(ck['trainable_state'], strict=True)
         fwd.stage.eval().requires_grad_(False)
 
-    s_common._init = init_u2
+    pipeline._init = init_u2
     try:
-        s_common.export_bundle(ds, split, indices, out_dir, workers=workers)
+        pipeline.export_bundle(ds, split, indices, out_dir, workers=workers)
     finally:
-        s_common._init = orig_init
+        pipeline._init = orig_init
 
 
 def step_export(seed, workers):
-    import s_common
+    import pipeline
     todo = {ds: ['fit', 'dev'] for ds in ACTIVE}
     for ds in EVAL_DSS:            # held-out LOO targets: dev only (eval)
         todo.setdefault(ds, []).append('dev')
     for ds, tags in todo.items():
         if ds == 'hanco_a3':
-            import a3_export_bundles  # noqa: F401
+            import hanco_bundles  # noqa: F401
         for tag, (src_split, src_name) in {
                 t: (('fit', FIT_SRC[ds]) if t == 'fit' else
                     ('development', 'devfull'))
@@ -112,7 +98,7 @@ def step_export(seed, workers):
 
 
 def union_stats():
-    from s_common import Bundle
+    from pipeline import Bundle
     f = U2ROOT / f'U2_GEOMETRY_STATS{subset_tag(ACTIVE)}.pt'
     if f.exists():
         s = torch.load(f, map_location='cpu', weights_only=False)
@@ -183,8 +169,8 @@ class DsSampler:
 
 
 def step_train_r(seed, device):
-    from s_common import Bundle
-    from a3_clean_retrain import assets, r_forward
+    from pipeline import Bundle
+    from fusion_refinement_training import assets, r_forward
     from mvhand.regional.candidates import CandidateEvidenceHead
     from mvhand.regional.training import errors
     out = U2ROOT / f'r_s{seed}{subset_tag(ACTIVE)}'
@@ -245,10 +231,10 @@ def _load_shared_r(seed, device):
 
 
 def step_train_ref(seed, device):
-    from s_common import Bundle
+    from pipeline import Bundle
     from pathlib import Path as P
-    from a3_clean_retrain import assets, clean_extras
-    from ref23_train import (build_operators, ref_inputs, load_supervision,
+    from fusion_refinement_training import assets, clean_extras
+    from refinement import (build_operators, ref_inputs, load_supervision,
                              supervision_batch)
     from mvhand.regional.refinement import MultiViewRefinement
     from mvhand.runtime.mano_compat import legacy_mano_imports
@@ -331,11 +317,11 @@ def step_train_ref(seed, device):
 
 
 def step_eval(seed, device):
-    from s_common import Bundle
-    from a3_clean_retrain import assets, clean_extras
-    from ref23_train import ref_inputs
+    from pipeline import Bundle
+    from fusion_refinement_training import assets, clean_extras
+    from refinement import ref_inputs
     from mvhand.regional.refinement import MultiViewRefinement
-    from ref23_train import build_operators
+    from refinement import build_operators
     mean, scale = union_stats()
     basis, _ = assets(device)
     head = _load_shared_r(seed, device)

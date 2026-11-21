@@ -1,19 +1,5 @@
-"""A3 3-view evaluation on the CLEAN retrained stack (frozen protocol).
-
-Protocol: $ALIGNHAND_DATA/protocol/hanco_a3_3view.json (frozen pre-eval).
-Development rule: primary = camera_ids[0]; 2 auxiliaries per draw seed
-s in {20261021,20261022,20261023}; main result = mean of the three draws.
-Final (1200+) is NOT touched here.
-
-Per draw and group: one stage1 forward with runtime_view_mask restricted to
-the 3 selected cameras (true 3-view fusion, not a post-hoc column mask),
-then on the masked outputs:
-    shippedR   the handoff R (leak-contaminated; comparison only)
-    cleanR x3  the a3clean retrained heads (seeds 20261023/24/25)
-    cleanRef x3  the a3clean Refs on their own R's x0
-GT scores only (dev). Groups whose 3-view placement fails are excluded from
-the means and counted (all arms affected identically).
-Outputs $ALIGNHAND_DATA/results/a3clean/A3_3VIEW_{dev256,devfull}.json.
+"""HanCo data access: registers the HanCo populations (8 views,
+annotation-assisted crops) with the shared pipeline.
 """
 import os
 import json
@@ -25,8 +11,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
-import s_common
-from s_common import F2F, PREPARED, guard
+import pipeline
+from pipeline import F2F, PREPARED, guard
 import torch
 
 HANDOFF = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/handoff')
@@ -40,12 +26,12 @@ DRAWS = ('20261021', '20261022', '20261023')
 
 PREPARED[('hanco_a3', 'fit')] = F2F / 'prepared/v24_hanco_a3_fit_v1'
 PREPARED[('hanco_a3', 'development')] = F2F / 'prepared/v24_hanco_a3_development_v1'
-s_common.PARENTS['hanco_a3'] = s_common.PARENTS['hanco']
+pipeline.PARENTS['hanco_a3'] = pipeline.PARENTS['hanco']
 link = HANDOFF / 'models/single_prior_R/hanco_a3'
 if not link.exists() and (HANDOFF / 'models/single_prior_R/hanco').exists():
     link.symlink_to(HANDOFF / 'models/single_prior_R/hanco')
 
-_orig_cache_files = s_common.cache_files
+_orig_cache_files = pipeline.cache_files
 
 
 def cache_files(ds, split):
@@ -69,7 +55,7 @@ def cache_files(ds, split):
     return files, rows, prepared
 
 
-s_common.cache_files = cache_files
+pipeline.cache_files = cache_files
 
 _W = {}
 
@@ -78,9 +64,9 @@ def _init():
     from mvhand.regional.candidates import CandidateEvidenceHead
     from mvhand.regional.refinement import MultiViewRefinement
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
-    from ref23_train import build_operators
+    from refinement import build_operators
     torch.set_num_threads(1)
-    fwd = s_common.FrozenForward('hanco_a3', 'development')
+    fwd = pipeline.FrozenForward('hanco_a3', 'development')
     stats = torch.load(CLEAN / 'CLEAN_GEOMETRY_STATS.pt', map_location='cpu',
                        weights_only=False)
     heads, refs = {}, {}
@@ -139,7 +125,7 @@ def out_to_batch(out):
 def _work(item):
     """item = (ids, draw). Returns rows of per-group metrics or failures."""
     from mvhand.regional.single_prior import forward_single_prior
-    from ref23_train import ref_inputs
+    from refinement import ref_inputs
     from mvhand.regional.training import errors
     ids, draw = item
     fwd = _W['fwd']

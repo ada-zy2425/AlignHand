@@ -1,15 +1,6 @@
-"""Ref v2.3 arm: zero-initialized multi-view residual refinement, +-5 mm box.
-
-Follows mvhand.cli.v24_train_refinement (balanced three-dataset Fit training,
-AdamW 3e-4 wd 1e-4, 64-group updates in 8-group microbatches, 10 epochs,
-epoch-10 evaluation) and mvhand.training.refinement.refinement_loss, with two
-documented deviations: displacement_bound_m=0.005 (the registered +-5 mm box
-this branch tests; the v24 CLI hardcodes .008) and an all-true 2D supervision
-mask (the original joint_2d_supervision_mask asset is not in the handoff;
-refinement_loss still prunes to in-crop, in-view joints).
-Operators are rebuilt from the licensed MANO template with the repo's
-coarse_mesh_operators (verified bitwise-identical upsample to the handoff
-asset). Fit GT trains; Development GT scores only.
+"""Pixel-aligned refinement (Ref): MANO coarse operators, input construction
+and training. The released model uses its output directly (gamma = 1); the
+residual is bounded to +-5 mm per coordinate.
 """
 import os
 import argparse
@@ -23,7 +14,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
-from s_common import Bundle, guard  # noqa: E402
+from pipeline import Bundle, guard  # noqa: E402
 from mvhand.geometry.mesh_sampling import coarse_mesh_operators  # noqa: E402
 from mvhand.regional.refinement import MultiViewRefinement  # noqa: E402
 from mvhand.regional.training import errors, state_hash  # noqa: E402
@@ -46,7 +37,7 @@ def build_operators():
         if np.abs(ops["upsample"] - shipped).max() != 0:
             raise ValueError("rebuilt operators differ from the handoff asset")
     else:
-        print('ref23_train: cached upsample asset not found; '
+        print('refinement: cached upsample asset not found; '
               'operators rebuilt from MANO without the equality '
               'check', flush=True)
     return ops

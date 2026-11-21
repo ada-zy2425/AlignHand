@@ -1,17 +1,10 @@
-"""Stage 6 E3: ONE shared Stage I trained on the union of the three legal
-TRAIN_COREs (spec B2). Thin adapter over the registered single-dataset
-recipe (mvhand v2_train_stage1 canonical constants), with the one change the
-experiment defines: a union sampler (dataset-equal, then sequence-equal,
-then sample) and dataset-pure microbatches under a fixed effective batch 4.
+"""Train Stage I (observation refinement) of the shared model.
 
-Recipe (from the real single-ds runs, F5): AdamW lr 7.5e-5 wd 1e-4 canonical
-betas/eps, grad-clip 1.0, effective batch 4, lr = 400-update linear warmup +
-cosine to floor 0.1 over the total. Budget = SUM of the three single-ds
-presentation totals at the same effective batch: 8000 (hanco a3 traincore)
-+ 8000 (dexycb M1) + 800 (ho3d M1) = 16,800 updates. Checkpoint every 1600 +
-final; ENDPOINT = final update, pre-registered, no Dev peeking. M1 variant,
-uniform view distribution (the deployed main-method Stage I is M1).
-usage: train_stage1.py [--seed 20261023] [--updates 16800] [--smoke N]
+One model on the pooled training splits of DexYCB, HanCo and HO3D: each update
+draws a dataset uniformly, then a sequence, then a sample. AdamW, lr 7.5e-5,
+16,800 updates, seed 20261023. Training lists: scripts/train/manifests/.
+
+usage: train_stage1.py [--seed S] [--device cpu|cuda] [--smoke N] [--out DIR]
 """
 import os
 import argparse, hashlib, json, random, sys, time

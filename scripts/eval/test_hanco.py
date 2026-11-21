@@ -1,25 +1,11 @@
-"""Round 3 H.3/H.4: UST-Hand-protocol scoring of the fixed HanCo models.
+"""Table 1, HanCo test set (20,198 frames, 8 views, UST-Hand protocol).
 
-Population: prepared/v24_hanco_a3_ust20198_v1 (all 20,198 authors' frames,
-8 views, s2.5 annotation-assisted crops). Models (frozen, inference only):
-  HG      frozen HaMeR prior + uniform geometry (no trained parts)
-  refit   HanCo FINAL refit stack (results/refit0to1199, MODEL_LOCK
-          verified before any forward)      -> refit_A / refit_Full
-  u2      locked shared stack (J1)          -> u2_A / u2_Full
-Endpoints are exported GT-free FIRST; ONE scoring pass per model computes
-every requested metric: UST root-aligned MPVPE/MPJPE (their regressor and
-root convention) plus absolute / wrist-relative / PA in our convention
-(metrics v2), on the full population AND, from the same outputs, the
-legacy 1,685-group subset by key join.
+Runs the frozen HaMeR prior and the released AlignHand model and scores
+MPVPE / MPJPE after root-translation alignment (fields ust_mpvpe_root /
+ust_mpjpe_root, in mm). Output arms: HG, u2_A (aligned anchor), u2_Full (AlignHand).
 
-UST metric: native MANO 16-joint base regressor + fingertip one-hot rows
-at vertices 745/317/445/556/673, reorder
-[0,13,14,15,16,1,2,3,17,4,5,6,18,10,11,12,19,7,8,9,20]; root = joint 9
-(middle MCP, = native joint 4); prediction and GT each translated by
-their own root; cam0 frame (the population's reference frame).
-
-usage: test_hanco.py selftest            # synthetic + Development checks
-       test_hanco.py run [--limit N] [--workers N]
+usage: test_hanco.py run [--limit N] [--workers N]
+       test_hanco.py selftest            # checks the UST joint layout used by the scorer
 """
 import os
 import argparse, hashlib, json, sys, time
@@ -31,7 +17,7 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
 sys.path.insert(0, os.environ.get('ALIGNHAND_SRC', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src')))
-import metrics2 as M2  # noqa: E402
+import metrics as M2  # noqa: E402
 
 F2F = Path(os.environ.get('ALIGNHAND_DATA', 'data'))
 PREP = F2F / 'prepared/v24_hanco_a3_ust20198_v1'
@@ -124,23 +110,23 @@ def cache_files_sr3():
 
 
 def _patch():
-    import s_common
-    from s_common import PREPARED, guard
-    import a3_3view_eval  # noqa: F401  (installs hanco_a3 patches)
+    import pipeline
+    from pipeline import PREPARED, guard
+    import hanco  # noqa: F401  (installs hanco_a3 patches)
     PREPARED[('hanco_a3', 'development')] = PREP
     files = cache_files_sr3()
     rows = [json.loads(s) for s in
             (PREP / 'ROWS.jsonl').read_text().splitlines()]
     assert len(files) == len(rows), (len(files), len(rows))
-    orig = s_common.cache_files
+    orig = pipeline.cache_files
 
     def cache_files(ds, split):
         if ds == 'hanco_a3':
             return files, rows, guard(PREPARED[(ds, 'development')])
         return orig(ds, split)
 
-    s_common.cache_files = cache_files
-    return s_common
+    pipeline.cache_files = cache_files
+    return pipeline
 
 
 def _verify_locks():
@@ -167,7 +153,7 @@ def _init():
     torch.set_num_threads(1)
     S = _patch()
     from mvhand.regional.candidates import CandidateEvidenceHead
-    from ref23_train import build_operators
+    from refinement import build_operators
     from mvhand.regional.refinement import MultiViewRefinement
     lock = (json.loads((REFIT / 'MODEL_LOCK.json').read_text())
             if HAVE_REFIT else None)
@@ -208,7 +194,7 @@ def _init():
 
 def _endpoints(stack, i):
     import torch
-    from ref23_train import ref_inputs
+    from refinement import ref_inputs
     fwd = stack['fwd']
     out = fwd.forward([i])
     if out is None:

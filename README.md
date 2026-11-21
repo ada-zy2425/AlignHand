@@ -65,17 +65,27 @@ the sample IDs of every split are in `configs/splits.zip`.
 ## 🌳 Folder structure
 
 ```
-├── configs          HaMeR config example, weight list, split IDs, environment
-├── media
+├── configs
+│   ├── hamer_prior.example.json   paths of the HaMeR checkpoint and MANO for the demo
+│   ├── weights.json               the five released model files and their sha256
+│   ├── splits.zip                 sample IDs of every training / development / test split
+│   └── requirements-lock.txt      exact package versions used for the paper
 ├── scripts
-│   ├── demo         run AlignHand on one multi-view group
-│   ├── eval         test sets (Table 1) and stage-wise analysis (Table 2)
-│   ├── train        train the shared model
-│   └── lib
-├── src/mvhand       model, geometry, fusion, refinement, training
-├── third_party      (not tracked) HaMeR
-└── data             (not tracked) datasets, caches, MANO, weights
+│   ├── demo/infer.py              run AlignHand on one multi-view group
+│   ├── eval/test_*.py             Table 1 on DexYCB-MV, HanCo, HO3D-Eval-MV, HO3D-MV
+│   ├── eval/dev_analysis.py       Table 2: error after each stage (development sets)
+│   ├── train/                     Stage I, then regional fusion and refinement
+│   ├── lib/                       pipeline, refinement, metrics, HanCo data access
+│   └── download_weights.py
+├── src/mvhand                     model, geometry, fusion, refinement, training, data readers
+├── media                          figures of this README
+├── third_party                    (not tracked) HaMeR
+└── data                           (not tracked) datasets, caches, MANO, weights
 ```
+
+The released model is called `u2` in the code and outputs: `u2_A` is the aligned anchor,
+`u2_X_R` adds regional fusion and `u2_Full` is the final AlignHand result; `HG` is the
+HaMeR + geometry baseline.
 
 ## 🚀 Running AlignHand
 
@@ -100,7 +110,8 @@ bash scripts/train/run_all.sh                          # training
 ```
 
 A fresh install with only the released model reproduces every number in Table 1 to
-within 0.0005 mm.
+within 0.0005 mm (Table 1 uses the fields `abs_v` / `abs_j21`, and `ust_mpvpe_root` /
+`ust_mpjpe_root` for HanCo).
 
 ## 🙏 Acknowledgements
 

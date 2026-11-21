@@ -53,7 +53,7 @@ def main():
     import cv2
     import torch
     torch.set_num_threads(max(1, os.cpu_count() // 2))
-    import s_common as S
+    import pipeline as S
     from mvhand.cli.v2_capture_hanco_prior import load_prior
     from mvhand.geometry.mesh import build_poem_published_21_regressor
     from mvhand.geometry.mesh_sampling import coarse_mesh_operators
@@ -138,7 +138,7 @@ def main():
     rck = torch.load(a.ref, map_location='cpu', weights_only=False)
     refm.load_state_dict(rck.get('state_dict', rck))
     refm.eval().requires_grad_(False)
-    from ref23_train import ref_inputs
+    from refinement import ref_inputs
     tt = torch.as_tensor
     extras = {k: tt(out[k]) for k in
               ('support_weights', 'reference_to_camera', 'raw_to_crop',

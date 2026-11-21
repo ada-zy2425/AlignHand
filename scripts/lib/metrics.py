@@ -1,23 +1,8 @@
-"""Stage 6 metrics v2 (spec F1/F2). One frozen implementation, source-hashed.
+"""Evaluation metrics. Inputs in metres, every reported number in mm.
 
-Units: inputs in METRES, every reported number in mm (one conversion).
-Joints: POEM-21 reader = repo build_poem_published_21_regressor (16x778 MANO
-base + fingertip vertices 744/320/443/555/672, published reorder). float64.
-
-Per group (X, Y: (778,3) m):
-  abs_v / abs_j21           no re-anchoring
-  rr_wrist_v / rr_wrist_j   both minus their own Q21 wrist (joint 0)
-  rr_centroid_v / rr_centroid_j  both minus their own VERTEX centroid
-  pa_v                      Sim(3) fitted on vertices (positive scale, no
-                            reflection), evaluated on vertices
-  pa_j                      Sim(3) fitted on the 21 joints separately
-  auc_v_raw / auc_j_raw     PCK over 100 even thresholds [0,50] mm,
-                            trapezoid /50 (NOT ROC-AUC); per-group
-  f5_raw / f15_raw          bidirectional vertex NN F-score @5/15 mm
-  auc_v_pa / f5_pa / f15_pa same under the group's PA-V alignment
-Aggregation helpers: group_mean / seq_mean / p95 (per-group dist) and a
-sequence-clustered bootstrap (B=1000, stat_seed 20261028) for mean CIs;
-paired deltas use the same resampling.
+MPVPE / MPJPE (absolute and Procrustes-aligned), AUC, F-scores at 5 / 15 mm,
+and sequence-level bootstrap confidence intervals. Joints use the 21-joint
+MANO layout (16 regressed joints + 5 fingertip vertices).
 """
 import os
 import hashlib

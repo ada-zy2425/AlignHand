@@ -1,15 +1,8 @@
-"""Shared frozen-forward data layer for the S-line and Ref v2.3 probes.
+"""Shared inference pipeline used by every script.
 
-Replicates the repo's training data path (SinglePriorInputCache +
-FrozenRefinementInputs) from the on-pod v21 capture caches, since the
-original regional caches live off-pod. The forward is the same validated
-pipeline as v4_fit_labels.py (frozen M1 stage1 + single-prior R seed20261023),
-extended to return every field the R trainer (v2_train_regional) and the Ref
-trainer (v24_train_refinement / FrozenRefinementInputs) consume.
-
-Bundles are directories of .npy stacks (fm memory-mapped); no GT inside.
-GT stays in the prepared PRIVATE_SCORE_TARGETS files and is loaded by the
-training/eval scripts strictly after predictions.
+Loads cached frozen-HaMeR outputs for a multi-view group and runs Stage I
+(observation refinement), support-weighted triangulation, metric alignment and
+regional fusion (FrozenForward). Also holds the data-root paths and helpers.
 """
 import hashlib
 import json

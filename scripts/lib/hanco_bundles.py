@@ -1,29 +1,24 @@
-"""Export HanCo-A3 (v24) bundles from the fresh A3 HaMeR captures.
-
-Reuses s_common's validated FrozenForward/export machinery via a pseudo
-dataset 'hanco_a3': prepared -> v24 populations, caches -> v24_a3_* capture
-shards (fit-CLI layout), parent/R models -> the hanco ones (symlinked).
-Exports: devfull (7084), dev256, fit8192.
+"""Export per-group HanCo inputs for R / Ref training and development analysis.
 """
 import os
 import json, sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
-import s_common
-from s_common import F2F, PREPARED, export_bundle, seq_stratified, guard
+import pipeline
+from pipeline import F2F, PREPARED, export_bundle, seq_stratified, guard
 
 HANDOFF = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/handoff')
 
 PREPARED[('hanco_a3', 'fit')] = F2F / 'prepared/v24_hanco_a3_fit_v1'
 PREPARED[('hanco_a3', 'development')] = F2F / 'prepared/v24_hanco_a3_development_v1'
-s_common.PARENTS['hanco_a3'] = s_common.PARENTS['hanco']
+pipeline.PARENTS['hanco_a3'] = pipeline.PARENTS['hanco']
 
 link = HANDOFF / 'models/single_prior_R/hanco_a3'
 if not link.exists() and (HANDOFF / 'models/single_prior_R/hanco').exists():
     link.symlink_to(HANDOFF / 'models/single_prior_R/hanco')
 
-_orig_cache_files = s_common.cache_files
+_orig_cache_files = pipeline.cache_files
 
 def cache_files(ds, split):
     if ds != 'hanco_a3':
@@ -45,7 +40,7 @@ def cache_files(ds, split):
         raise ValueError('cache/prepared mismatch')
     return files, rows, prepared
 
-s_common.cache_files = cache_files
+pipeline.cache_files = cache_files
 
 def main():
     root = Path(os.environ.get('ALIGNHAND_DATA', 'data') + '/results/s1/bundles')
@@ -56,7 +51,7 @@ def main():
         if (out / 'meta.json').exists():
             print('skip', out, flush=True)
             continue
-        fwd = s_common.FrozenForward('hanco_a3', split)
+        fwd = pipeline.FrozenForward('hanco_a3', split)
         n = len(fwd.rows)
         idx = list(range(n)) if count is None else seq_stratified(fwd.rows, min(count, n))
         print('exporting', name, len(idx), 'groups', flush=True)

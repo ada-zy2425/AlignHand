@@ -1,27 +1,5 @@
-"""A3 clean full-stack retrain (leak remediation).
-
-The shipped R (single_prior_R seed20261023) and the gate3 Ref were trained
-with the ORIGINAL hanco fit split, which contains the A3 development
-sequences 1100-1199 -> every A3-dev number built on them is void. This
-script retrains the trainable stack from the CLEAN a3 fit bundle
-(sequences 0-1099 only; verified at export):
-
-  phase r    fresh CandidateEvidenceHead on hanco_a3/fit8192, recipe mirrors
-             mvhand.cli.v2_train_regional (AdamW 3e-4 wd 1e-4, batch 64,
-             10 epochs, final-epoch checkpoint), geometry mean/scale
-             RECOMPUTED from the clean fit bundle (104-dim masked mean/std,
-             same formula as finalize_cache). Evaluated on hanco_a3/dev256
-             next to the shipped-R baseline baked in the bundle (x0).
-  phase ref  MultiViewRefinement (ref23 recipe, displacement_bound_m=.005,
-             all-true 2D mask) trained on hanco_a3/fit8192 with x0/vertices
-             RECOMPUTED live from the clean R - never the bundle's x0.
-             Deviation (recorded): single-dataset training; the original
-             Ref recipe balances three datasets, but only the A3 track is
-             contaminated and retrained here.
-Exposures recorded, not fixed: Stage I adapter + capture-time stage1
-outputs (support_weights, scaffold, placed, corrected_raw) come from the
-handoff parent trained with the original split. GT: fit bundle GT trains
-(allowed), dev GT scores only.
+"""Training loops for regional fusion (R) and pixel-aligned refinement (Ref),
+called by scripts/train/train_fusion_refinement.py.
 """
 import os
 import argparse
@@ -34,11 +12,11 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib'))
-from s_common import Bundle, guard, HANDOFF  # noqa: E402
+from pipeline import Bundle, guard, HANDOFF  # noqa: E402
 from mvhand.regional.candidates import CandidateEvidenceHead  # noqa: E402
 from mvhand.regional.single_prior import forward_single_prior  # noqa: E402
 from mvhand.regional.training import errors, state_hash  # noqa: E402
-from ref23_train import (build_operators, ref_inputs, batch_extras,  # noqa: E402
+from refinement import (build_operators, ref_inputs, batch_extras,  # noqa: E402
                          load_supervision, supervision_batch)
 from mvhand.regional.refinement import MultiViewRefinement  # noqa: E402
 from mvhand.runtime.mano_compat import legacy_mano_imports  # noqa: E402
