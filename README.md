@@ -5,7 +5,7 @@
 > Zhilu Yang, Kun Yang, Shiyan Wang, Anqi Xu, Xinran Huang, Yizheng Jiao, Huan Yang,
 > [Rolandos Alexandros Potamias](https://rolpotamias.github.io/)
 >
-> [Project Page](https://ada-zy2425.github.io/AlignHand/) · [Paper](https://ada-zy2425.github.io/AlignHand/static/AlignHand.pdf)
+> [Project Page](https://ada-zy2425.github.io/AlignHand/) · [arXiv](https://arxiv.org/abs/2611.28979) · [Paper](https://arxiv.org/pdf/2611.28979)
 
 <p align="center">
   <img src="media/teaser.jpg" width="820" />
@@ -132,11 +132,12 @@ and [HO3D](https://github.com/shreyashampali/ho3d).
 ## 📜 Citation
 
 ```
-@misc{yang2026alignhand,
-  title  = {AlignHand: Multi-View Hand Reconstruction from a Frozen Monocular Prior},
-  author = {Yang, Zhilu and Yang, Kun and Wang, Shiyan and Xu, Anqi and Huang, Xinran
-            and Jiao, Yizheng and Yang, Huan and Potamias, Rolandos Alexandros},
-  year   = {2026}
+@article{yang2026alignhand,
+  title   = {AlignHand: Multi-View Hand Reconstruction from a Frozen Monocular Prior},
+  author  = {Yang, Zhilu and Yang, Kun and Wang, Shiyan and Xu, Anqi and Huang, Xinran
+             and Jiao, Yizheng and Yang, Huan and Potamias, Rolandos Alexandros},
+  journal = {arXiv preprint arXiv:2611.28979},
+  year    = {2026}
 }
 ```
 
